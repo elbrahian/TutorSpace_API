@@ -6,6 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface ChatRepository extends JpaRepository<Chat, Long> {
-    Optional<Chat> fingByTutorIdEstudianteId(Long tutorId, Long estudianteId);
-    Boolean existsByTutorIdEstudianteId(Long tutorId, Long estudianteId);
+    Optional<Chat> findByTutorIdAndEstudianteId(Long tutorId, Long estudianteId);
+    Boolean existsByTutorIdAndEstudianteId(Long tutorId, Long estudianteId);
 }
