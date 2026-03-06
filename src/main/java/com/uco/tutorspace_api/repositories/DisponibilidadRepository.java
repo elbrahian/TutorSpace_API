@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalTime;
 import java.util.List;
 
 public interface DisponibilidadRepository extends JpaRepository<Disponibilidad, Long> {
@@ -20,7 +21,7 @@ public interface DisponibilidadRepository extends JpaRepository<Disponibilidad, 
     List<Disponibilidad> findSolapadas(
             @Param("tutorId") Long tutorId,
             @Param("dia") String dia,
-            @Param("horaInicio") String horaInicio,
-            @Param("horaFin") String horaFin
+            @Param("horaInicio") LocalTime horaInicio,
+            @Param("horaFin") LocalTime horaFin
     );
 }

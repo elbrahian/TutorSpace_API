@@ -1,8 +1,16 @@
 package com.uco.tutorspace_api.domain.dto;
 
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-public record AsignarMateriaRequest(
-        @NotNull Long materiaId
-) {
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class AsignarMateriaRequest {
+    @NotNull
+    private Long materiaId;
 }
