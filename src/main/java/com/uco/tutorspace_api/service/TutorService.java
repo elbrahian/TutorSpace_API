@@ -46,12 +46,12 @@ public class TutorService {
     public TutorResponse asignarMateria(Long tutorId, AsignarMateriaRequest request) {
         Tutor tutor = getTutorOrThrow(tutorId);
 
-        Materia materia = materiaRepository.findById(request.getMateriaId())
+        Materia materia = materiaRepository.findById(request.materiaId())
                 .orElseThrow(() -> new RuntimeException("Materia no encontrada"));
 
         // Evitar duplicados
         boolean yaAsignada = tutor.getMaterias().stream()
-                .anyMatch(m -> m.getId().equals(request.getMateriaId()));
+                .anyMatch(m -> m.getId().equals(request.materiaId()));
 
         if (yaAsignada) {
             throw new RuntimeException("La materia ya está asignada a este tutor");
