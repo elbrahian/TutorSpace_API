@@ -1,5 +1,8 @@
 package com.uco.tutorspace_api.Utils;
 
+import org.springframework.stereotype.Component;
+
+@Component
 public class EmailValidator {
     private static final String DOMINIO_INSTITUCIONAL = "@uco.net.co";
 
