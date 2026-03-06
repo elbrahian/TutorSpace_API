@@ -15,6 +15,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 public class Tutor extends Usuario{
+
     @Column(name = "jornada_general", length = 50)
     private String jornadaGeneral;
 
