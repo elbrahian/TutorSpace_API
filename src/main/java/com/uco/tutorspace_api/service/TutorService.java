@@ -1,0 +1,107 @@
+package com.uco.tutorspace_api.service;
+
+import com.uco.tutorspace_api.domain.Materia;
+import com.uco.tutorspace_api.domain.Tutor;
+import com.uco.tutorspace_api.domain.dto.AsignarMateriaRequest;
+import com.uco.tutorspace_api.domain.dto.CrearTutorRequest;
+import com.uco.tutorspace_api.domain.dto.MateriaResponse;
+import com.uco.tutorspace_api.domain.dto.TutorResponse;
+import com.uco.tutorspace_api.domain.enums.EstadoUsuario;
+import com.uco.tutorspace_api.domain.enums.RolUsuario;
+import com.uco.tutorspace_api.repositories.MateriaRepository;
+import com.uco.tutorspace_api.repositories.TutorRepository;
+import com.uco.tutorspace_api.repositories.UsuarioRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class TutorService {
+    private final UsuarioRepository usuarioRepository;
+    private final TutorRepository tutorRepository;
+    private final MateriaRepository materiaRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    // Solo admin puede llamar esto (se controla en el controller)
+    public TutorResponse registrarTutor(CrearTutorRequest request) {
+        if (usuarioRepository.existsByEmail(request.email())) {
+            throw new RuntimeException("El correo ya está registrado");
+        }
+
+        Tutor tutor = new Tutor();
+        tutor.setNombre(request.nombre());
+        tutor.setEmail(request.email());
+        tutor.setPassword(passwordEncoder.encode(request.password()));
+        tutor.setRol(RolUsuario.TUTOR);
+        tutor.setEstado(EstadoUsuario.ACTIVO);
+        tutor.setJornadaGeneral(request.jornadaGeneral());
+
+        Tutor guardado = tutorRepository.save(tutor);
+        return toResponse(guardado);
+    }
+
+    public TutorResponse asignarMateria(Long tutorId, AsignarMateriaRequest request) {
+        Tutor tutor = getTutorOrThrow(tutorId);
+
+        Materia materia = materiaRepository.findById(request.getMateriaId())
+                .orElseThrow(() -> new RuntimeException("Materia no encontrada"));
+
+        // Evitar duplicados
+        boolean yaAsignada = tutor.getMaterias().stream()
+                .anyMatch(m -> m.getId().equals(request.getMateriaId()));
+
+        if (yaAsignada) {
+            throw new RuntimeException("La materia ya está asignada a este tutor");
+        }
+
+        tutor.getMaterias().add(materia);
+        return toResponse(tutorRepository.save(tutor));
+    }
+
+    public TutorResponse retirarMateria(Long tutorId, Long materiaId) {
+        Tutor tutor = getTutorOrThrow(tutorId);
+
+        tutor.getMaterias().removeIf(m -> m.getId().equals(materiaId));
+        return toResponse(tutorRepository.save(tutor));
+    }
+
+    public TutorResponse desactivarTutor(Long tutorId) {
+        Tutor tutor = getTutorOrThrow(tutorId);
+        tutor.setEstado(EstadoUsuario.INACTIVO);
+        return toResponse(tutorRepository.save(tutor));
+    }
+
+    public TutorResponse activarTutor(Long tutorId) {
+        Tutor tutor = getTutorOrThrow(tutorId);
+        tutor.setEstado(EstadoUsuario.ACTIVO);
+        return toResponse(tutorRepository.save(tutor));
+    }
+
+    public List<TutorResponse> listarTutores() {
+        return tutorRepository.findAll().stream().map(this::toResponse).toList();
+    }
+
+    // Mapeo a response
+    public TutorResponse toResponse(Tutor tutor) {
+        List<MateriaResponse> materias = tutor.getMaterias().stream()
+                .map(m -> new MateriaResponse(m.getId(), m.getNombre(), m.getCodigo()))
+                .toList();
+
+        return new TutorResponse(
+                tutor.getId(),
+                tutor.getNombre(),
+                tutor.getEmail(),
+                tutor.getJornadaGeneral(),
+                tutor.getEstado(),
+                materias
+        );
+    }
+
+    private Tutor getTutorOrThrow(Long id) {
+        return tutorRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
+    }
+}
