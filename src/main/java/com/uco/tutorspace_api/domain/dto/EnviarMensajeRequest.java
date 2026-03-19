@@ -6,6 +6,8 @@ import jakarta.validation.constraints.Size;
 
 public record EnviarMensajeRequest(
         @JsonProperty("contenido")
-        @NotBlank @Size(max = 500) String contenido
+        @NotBlank(message = "El contenido es requerido")
+        @Size(max = 500, message = "El mensaje no puede exceder 500 caracteres")
+        String contenido
 ) {
 }

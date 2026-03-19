@@ -2,6 +2,7 @@ package com.uco.tutorspace_api.config;
 
 import com.uco.tutorspace_api.Utils.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -12,6 +13,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
@@ -24,20 +26,32 @@ public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
         StompHeaderAccessor accessor =
                 MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
-        if (StompCommand.CONNECT.equals(accessor.getCommand())) {
+        if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
             String token = accessor.getFirstNativeHeader("Authorization");
 
-            if (token != null && token.startsWith("Bearer ")) {
-                token = token.substring(7);
-                if (jwtUtil.isTokenValid(token)) {
-                    String email = jwtUtil.extractEmail(token);
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-                    UsernamePasswordAuthenticationToken auth =
-                            new UsernamePasswordAuthenticationToken(
-                                    userDetails, null, userDetails.getAuthorities()
-                            );
-                    accessor.setUser(auth);
+            if (token == null || !token.startsWith("Bearer ")) {
+                log.warn("Intento de conexión WebSocket sin token de autenticación");
+                return null;
+            }
+
+            token = token.substring(7);
+            
+            try {
+                if (!jwtUtil.isTokenValid(token)) {
+                    log.warn("Intento de conexión WebSocket con token inválido");
+                    return null;
                 }
+                
+                String email = jwtUtil.extractEmail(token);
+                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                UsernamePasswordAuthenticationToken auth =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails, null, userDetails.getAuthorities()
+                        );
+                accessor.setUser(auth);
+            } catch (Exception e) {
+                log.warn("Error de autenticación WebSocket: {}", e.getMessage());
+                return null;
             }
         }
         return message;

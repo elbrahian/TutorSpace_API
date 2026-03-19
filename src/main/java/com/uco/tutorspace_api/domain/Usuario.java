@@ -1,5 +1,6 @@
 package com.uco.tutorspace_api.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.uco.tutorspace_api.domain.enums.EstadoUsuario;
 import com.uco.tutorspace_api.domain.enums.RolUsuario;
 import jakarta.persistence.*;
@@ -27,6 +28,7 @@ public abstract class Usuario {
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
+    @JsonIgnore
     @Column(nullable = false)
     private String password;
 
