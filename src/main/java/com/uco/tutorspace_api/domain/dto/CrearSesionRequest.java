@@ -6,10 +6,19 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 public record CrearSesionRequest(
-        @NotNull Long estudianteId,
-        @NotNull Long disponibilidadId,
-        @NotNull LocalDate fecha,
-        @NotNull LocalTime horaInicio,
-        @NotNull LocalTime horaFin
+        @NotNull(message = "El ID del estudiante es requerido")
+        Long estudianteId,
+        
+        @NotNull(message = "El ID de la disponibilidad es requerido")
+        Long disponibilidadId,
+        
+        @NotNull(message = "La fecha es requerida")
+        LocalDate fecha,
+        
+        @NotNull(message = "La hora de inicio es requerida")
+        LocalTime horaInicio,
+        
+        @NotNull(message = "La hora de fin es requerida")
+        LocalTime horaFin
 ) {
 }

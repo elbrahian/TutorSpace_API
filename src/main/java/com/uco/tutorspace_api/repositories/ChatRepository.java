@@ -13,9 +13,10 @@ public interface ChatRepository extends JpaRepository<Chat, Long> {
     Boolean existsByTutorIdAndEstudianteId(Long tutorId, Long estudianteId);
 
     @Query("""
-        SELECT c FROM Chat c
-        WHERE c.tutor.id = :usuarioId
-        OR c.estudiante.id = :usuarioId
+        SELECT DISTINCT c FROM Chat c
+        LEFT JOIN FETCH c.tutor t
+        LEFT JOIN FETCH c.estudiante e
+        WHERE t.id = :usuarioId OR e.id = :usuarioId
     """)
     List<Chat> findAllByUsuarioId(@Param("usuarioId") Long usuarioId);
 }

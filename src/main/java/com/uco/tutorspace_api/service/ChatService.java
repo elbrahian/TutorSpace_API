@@ -77,7 +77,7 @@ public class ChatService {
         Mensaje mensaje = new Mensaje();
         mensaje.setChat(chat);
         mensaje.setEmisor(emisor);
-        mensaje.setContenido(request.contenido());
+        mensaje.setContenido(sanitizar(request.contenido()));
         mensaje.setFecha(LocalDateTime.now());
 
         Mensaje guardado = mensajeRepository.save(mensaje);
@@ -137,5 +137,15 @@ public class ChatService {
                 m.getContenido(),
                 m.getFecha()
         );
+    }
+
+    private String sanitizar(String contenido) {
+        if (contenido == null) return "";
+        return contenido
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#x27;")
+                .trim();
     }
 }
