@@ -4,6 +4,7 @@ import com.uco.tutorspace_api.domain.dto.*;
 import com.uco.tutorspace_api.service.MateriaService;
 import com.uco.tutorspace_api.service.TutorService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -67,5 +68,14 @@ public class AdminController {
             @PathVariable Long tutorId,
             @PathVariable Long materiaId) {
         return ResponseEntity.ok(tutorService.retirarMateria(tutorId, materiaId));
+    }
+
+    public record ActualizarJornadaRequest(@NotBlank String jornadaGeneral) {}
+
+    @PatchMapping("/tutores/{id}/jornada")
+    public ResponseEntity<TutorResponse> actualizarJornada(
+            @PathVariable Long id,
+            @Valid @RequestBody ActualizarJornadaRequest request) {
+        return ResponseEntity.ok(tutorService.actualizarJornada(id, request.jornadaGeneral()));
     }
 }
