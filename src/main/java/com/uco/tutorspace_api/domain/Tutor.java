@@ -1,5 +1,6 @@
 package com.uco.tutorspace_api.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,6 +20,7 @@ public class Tutor extends Usuario{
     @Column(name = "jornada_general", length = 50)
     private String jornadaGeneral;
 
+    @JsonIgnore
     @ManyToMany
     @JoinTable(
             name = "tutor_materia",

@@ -1,5 +1,6 @@
 package com.uco.tutorspace_api.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.uco.tutorspace_api.domain.enums.EstadoDisponibilidad;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -20,6 +21,7 @@ public class Disponibilidad {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "tutor_id", nullable = false)
     private Tutor tutor;
