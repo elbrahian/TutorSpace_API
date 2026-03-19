@@ -3,7 +3,9 @@ package com.uco.tutorspace_api.controllers;
 import com.uco.tutorspace_api.config.CustomUserDetails;
 import com.uco.tutorspace_api.domain.dto.CrearDisponibilidadRequest;
 import com.uco.tutorspace_api.domain.dto.DisponibilidadResponse;
+import com.uco.tutorspace_api.domain.dto.TutorResponse;
 import com.uco.tutorspace_api.service.DisponibilidadService;
+import com.uco.tutorspace_api.service.TutorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,6 +22,7 @@ import java.util.List;
 @PreAuthorize( "hasRole('TUTOR')")
 public class TutorController {
     private final DisponibilidadService disponibilidadService;
+    private final TutorService tutorService;
 
     // Obtener el tutorId del token JWT para seguridad
     private Long getTutorId(Authentication auth) {
@@ -43,5 +46,11 @@ public class TutorController {
     public ResponseEntity<Void> eliminar(@PathVariable Long id, Authentication auth) {
         disponibilidadService.eliminarDisponibilidad(id, getTutorId(auth));
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/perfil")
+    public ResponseEntity<TutorResponse> verPerfil(Authentication auth) {
+        Long tutorId = ((CustomUserDetails) auth.getPrincipal()).getId();
+        return ResponseEntity.ok(tutorService.getTutorById(tutorId));
     }
 }

@@ -80,6 +80,10 @@ public class TutorService {
         return toResponse(tutorRepository.save(tutor));
     }
 
+    public TutorResponse getTutorById(Long tutorId) {
+        return toResponse(getTutorOrThrow(tutorId));
+    }
+
     public TutorResponse activarTutor(Long tutorId) {
         Tutor tutor = getTutorOrThrow(tutorId);
         tutor.setEstado(EstadoUsuario.ACTIVO);
