@@ -29,9 +29,7 @@ public class ChatService {
 
     // HU-08 — solo el estudiante puede iniciar el chat
     public ChatResponse iniciarChat(Long estudianteId, IniciarChatRequest request) {
-        // Verificar que no exista ya un chat entre estos dos
         if (chatRepository.existsByTutorIdAndEstudianteId(request.tutorId(), estudianteId)) {
-            // Si ya existe, retornarlo
             Chat existente = chatRepository
                     .findByTutorIdAndEstudianteId(request.tutorId(), estudianteId)
                     .get();
@@ -51,7 +49,6 @@ public class ChatService {
 
         Chat guardado = chatRepository.save(chat);
 
-        // Notificar al tutor que tiene un nuevo chat
         notificacionService.enviarNotificacion(
                 tutor,
                 TipoNotificacion.NUEVO_MENSAJE,
@@ -61,7 +58,6 @@ public class ChatService {
         return toResponse(guardado);
     }
 
-    // Enviar mensaje — usado tanto por REST como por WebSocket
     public MensajeResponse enviarMensaje(Long chatId, Long emisorId,
                                          EnviarMensajeRequest request) {
         Chat chat = chatRepository.findById(chatId)
@@ -87,10 +83,8 @@ public class ChatService {
         Mensaje guardado = mensajeRepository.save(mensaje);
         MensajeResponse response = toMensajeResponse(guardado);
 
-        // Push WebSocket al canal del chat
         messagingTemplate.convertAndSend("/topic/chat/" + chatId, response);
 
-        // Notificar al otro participante
         Usuario destinatario = esTutor ? chat.getEstudiante() : chat.getTutor();
         notificacionService.enviarNotificacion(
                 destinatario,
@@ -106,7 +100,6 @@ public class ChatService {
         Chat chat = chatRepository.findById(chatId)
                 .orElseThrow(() -> new RuntimeException("Chat no encontrado"));
 
-        // Verificar acceso al chat
         boolean tieneAcceso = chat.getTutor().getId().equals(usuarioId)
                 || chat.getEstudiante().getId().equals(usuarioId);
 
@@ -119,9 +112,8 @@ public class ChatService {
     }
 
     public List<ChatResponse> obtenerChatsPorUsuario(Long usuarioId) {
-        return chatRepository.findAll().stream()
-                .filter(c -> c.getTutor().getId().equals(usuarioId)
-                        || c.getEstudiante().getId().equals(usuarioId))
+        return chatRepository.findAllByUsuarioId(usuarioId)
+                .stream()
                 .map(this::toResponse)
                 .toList();
     }

@@ -29,7 +29,7 @@ public class NotificacionService {
 
         Notificacion guardada = notificacionRepository.save(notificacion);
 
-        // 2. Push en tiempo real por WebSocket al canal del usuario
+
         messagingTemplate.convertAndSend(
                 "/topic/notificaciones/" + usuario.getId(),
                 guardada

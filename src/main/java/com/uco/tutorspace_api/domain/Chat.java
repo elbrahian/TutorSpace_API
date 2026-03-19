@@ -1,5 +1,6 @@
 package com.uco.tutorspace_api.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -31,6 +32,7 @@ public class Chat {
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion = LocalDateTime.now();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL)
     private List<Mensaje> mensajes = new ArrayList<>();
 }
