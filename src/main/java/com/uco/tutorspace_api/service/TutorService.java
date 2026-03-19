@@ -61,6 +61,12 @@ public class TutorService {
         return toResponse(tutorRepository.save(tutor));
     }
 
+    public TutorResponse actualizarJornada(Long tutorId, String nuevaJornada) {
+        Tutor tutor = getTutorOrThrow(tutorId);
+        tutor.setJornadaGeneral(nuevaJornada);
+        return toResponse(tutorRepository.save(tutor));
+    }
+
     public TutorResponse retirarMateria(Long tutorId, Long materiaId) {
         Tutor tutor = getTutorOrThrow(tutorId);
 

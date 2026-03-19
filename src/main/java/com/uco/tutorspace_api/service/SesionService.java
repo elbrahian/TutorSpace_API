@@ -72,7 +72,7 @@ public class SesionService {
         disponibilidadService.bloquearFranja(disponibilidad.getId());
 
         // Registrar en historial
-        historialSesionService.registrarCambio(guardada, null, EstadoSesion.PENDIENTE);
+        historialSesionService.registrarCambio(guardada, EstadoSesion.PENDIENTE, EstadoSesion.PENDIENTE);
 
         // Notificar al estudiante
         notificacionService.enviarNotificacion(
