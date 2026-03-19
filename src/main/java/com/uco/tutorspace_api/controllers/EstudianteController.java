@@ -5,6 +5,8 @@ import com.uco.tutorspace_api.domain.dto.MateriaResponse;
 import com.uco.tutorspace_api.domain.dto.TutorBusquedaResponse;
 import com.uco.tutorspace_api.service.BusquedaTutorService;
 import com.uco.tutorspace_api.service.MateriaService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,7 +24,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/estudiante")
 @RequiredArgsConstructor
-@PreAuthorize( "hasRole('ESTUDIANTE')")
+@PreAuthorize("hasRole('ESTUDIANTE')")
+@Tag(name = "Estudiante", description = "Búsqueda de tutores y gestión de materias")
 public class EstudianteController {
     private final BusquedaTutorService busquedaTutorService;
     private final MateriaService materiaService;
@@ -30,7 +33,8 @@ public class EstudianteController {
     private Long getEstudianteId(Authentication auth) {
         return ((CustomUserDetails) auth.getPrincipal()).getId();
     }
-    // HU-05 — buscar tutores por materia (paginado, sin franjas exactas)
+
+    @Operation(summary = "Buscar tutores", description = "Busca tutores disponibles por materia con paginación")
     @GetMapping("/tutores/buscar")
     public ResponseEntity<Page<TutorBusquedaResponse>> buscar(
             @RequestParam Long materiaId,
@@ -41,7 +45,7 @@ public class EstudianteController {
         return ResponseEntity.ok(busquedaTutorService.buscarPorMateria(materiaId, pageable));
     }
 
-    // Listar materias disponibles para filtrar búsqueda
+    @Operation(summary = "Listar materias", description = "Obtiene todas las materias disponibles para filtrar búsqueda")
     @GetMapping("/materias")
     public ResponseEntity<List<MateriaResponse>> listarMaterias() {
         return ResponseEntity.ok(materiaService.listarMaterias());
