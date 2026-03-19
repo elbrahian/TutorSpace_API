@@ -60,12 +60,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 }
             }
         } catch (RuntimeException e) {
-            // Token expirado o inválido — responder con 401 directamente
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
             response.getWriter().write(
-                    "{\"error\": \"" + e.getMessage() + "\"}"
+                    "{\"error\": \"Token inválido o expirado\"}"
             );
+            response.getWriter().flush();
             return;
         }
 

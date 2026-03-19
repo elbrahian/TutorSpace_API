@@ -111,7 +111,7 @@ public class TutorService {
     }
 
     private Tutor getTutorOrThrow(Long id) {
-        return tutorRepository.findById(id)
+        return tutorRepository.findByIdWithMaterias(id)
                 .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
     }
 }
