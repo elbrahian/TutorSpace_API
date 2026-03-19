@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: tutorspace-api
+    runtime: docker
+    plan: free
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
