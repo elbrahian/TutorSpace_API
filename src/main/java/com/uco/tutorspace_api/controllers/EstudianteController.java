@@ -36,6 +36,7 @@ public class EstudianteController {
 
     @Operation(summary = "Buscar tutores", description = "Busca tutores disponibles por materia con paginación")
     @GetMapping("/tutores/buscar")
+    @PreAuthorize("hasRole('ESTUDIANTE')")
     public ResponseEntity<Page<TutorBusquedaResponse>> buscar(
             @RequestParam Long materiaId,
             @RequestParam(defaultValue = "0") int page,
