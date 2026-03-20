@@ -37,10 +37,15 @@ public class EstudianteController {
     @Operation(summary = "Buscar tutores", description = "Busca tutores disponibles por materia con paginación")
     @GetMapping("/tutores/buscar")
     @PreAuthorize("hasRole('ESTUDIANTE')")
-    public ResponseEntity<Page<TutorBusquedaResponse>> buscar(
-            @RequestParam Long materiaId,
+    public ResponseEntity<?> buscar(
+            @RequestParam(required = false) Long materiaId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
+
+        // Si no hay materiaId retornar lista vacía
+        if (materiaId == null) {
+            return ResponseEntity.ok(Page.empty());
+        }
 
         Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.ok(busquedaTutorService.buscarPorMateria(materiaId, pageable));
