@@ -11,13 +11,13 @@ import java.util.Optional;
 
 public interface TutorRepository extends JpaRepository<Tutor, Long> {
     @Query("""
-        SELECT DISTINCT t FROM Tutor t 
-        JOIN FETCH t.materias m
-        JOIN t.disponibilidades d 
-        WHERE m.id = :materiaId
-        AND t.estado = 'ACTIVO'
-        AND d.estado = 'DISPONIBLE'
-    """)
+    SELECT DISTINCT t FROM Tutor t 
+    JOIN FETCH t.materias m
+    LEFT JOIN t.disponibilidades d
+    WHERE m.id = :materiaId
+    AND t.estado = 'ACTIVO'
+    AND (d IS NULL OR d.estado = 'DISPONIBLE')
+""")
     Page<Tutor> findActivosByMateria(@Param("materiaId") Long materiaId, Pageable pageable);
 
     @Query("SELECT t FROM Tutor t LEFT JOIN FETCH t.materias WHERE t.id = :id")
