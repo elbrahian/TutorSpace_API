@@ -39,7 +39,7 @@ public class SesionController {
                 .body(sesionService.crearSesion(getUserId(auth), request));
     }
 
-    @Operation(summary = "Cambiar estado de sesión", description = "El tutor cambia el estado: PENDIENTE → APROBADA o CANCELADA")
+    @Operation(summary = "Cambiar estado de sesión", description = "El tutor cambia el estado: PENDIENTE → APROBADA o CANCELADA; APROBADA → COMPLETADA o CANCELADA")
     @PatchMapping("/{id}/estado")
     @PreAuthorize("hasRole('TUTOR')")
     public ResponseEntity<SesionResponse> cambiarEstado(

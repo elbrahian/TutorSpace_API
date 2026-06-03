@@ -201,6 +201,34 @@ class SesionServiceTest {
     }
 
     @Test
+    @DisplayName("cambiarEstado APROBADA → COMPLETADA debe actualizar estado (MNT-12)")
+    void cambiarEstado_aprobadaToCompletada_shouldUpdateState() {
+        sesionMock.setEstado(EstadoSesion.APROBADA);
+        when(sesionRepository.findById(1L)).thenReturn(Optional.of(sesionMock));
+        when(sesionRepository.save(any(Sesion.class))).thenReturn(sesionMock);
+
+        CambiarEstadoSesionRequest request = new CambiarEstadoSesionRequest(EstadoSesion.COMPLETADA);
+        sesionService.cambiarEstado(1L, 1L, request);
+
+        verify(historialSesionService).registrarCambio(any(), eq(EstadoSesion.APROBADA), eq(EstadoSesion.COMPLETADA));
+    }
+
+    @Test
+    @DisplayName("cambiarEstado PENDIENTE → COMPLETADA debe lanzar excepción (MNT-12)")
+    void cambiarEstado_pendienteToCompletada_shouldThrowException() {
+        sesionMock.setEstado(EstadoSesion.PENDIENTE);
+        when(sesionRepository.findById(1L)).thenReturn(Optional.of(sesionMock));
+
+        CambiarEstadoSesionRequest request = new CambiarEstadoSesionRequest(EstadoSesion.COMPLETADA);
+        RuntimeException exception = assertThrows(RuntimeException.class, () ->
+                sesionService.cambiarEstado(1L, 1L, request)
+        );
+
+        assertEquals("Solo se puede completar una sesión que esté APROBADA", exception.getMessage());
+        verify(sesionRepository, never()).save(any());
+    }
+
+    @Test
     @DisplayName("crearSesion sin chat previo debe lanzar excepción")
     void crearSesion_withoutExistingChat_shouldThrowException() {
         when(tutorRepository.findById(1L)).thenReturn(Optional.of(tutorMock));
