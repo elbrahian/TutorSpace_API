@@ -10,7 +10,7 @@ public record CalificacionSesionRequest(
         @Max(value = 5, message = "La calificación máxima es 5")
         int calificacion,
 
-        @Size(max = 1000, message = "El comentario no puede superar 1000 caracteres")
+        @Size(max = 500, message = "El comentario no puede superar 500 caracteres")
         String comentario
 ) {
 }
