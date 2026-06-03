@@ -1,6 +1,6 @@
 package com.uco.tutorspace_api.config;
 
-import com.uco.tutorspace_api.Utils.JwtUtil;
+import com.uco.tutorspace_api.utils.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
