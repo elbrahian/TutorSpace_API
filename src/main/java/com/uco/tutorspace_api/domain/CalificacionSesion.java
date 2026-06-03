@@ -35,7 +35,7 @@ public class CalificacionSesion {
     @Column(nullable = false)
     private int calificacion;
 
-    @Column(length = 1000)
+    @Column(length = 500)
     private String comentario;
 
     @Column(name = "created_at")
