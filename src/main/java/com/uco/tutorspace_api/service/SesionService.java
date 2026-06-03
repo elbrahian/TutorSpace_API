@@ -90,6 +90,14 @@ public class SesionService {
         EstadoSesion estadoAnterior = sesion.getEstado();
         EstadoSesion estadoNuevo = request.nuevoEstado();
 
+        // MNT-12 — una sesión solo puede marcarse COMPLETADA si estaba APROBADA.
+        // Así el flujo hacia COMPLETADA (estado requerido para poder evaluar) es claro
+        // y no se completan sesiones PENDIENTES o CANCELADAS por error.
+        if (estadoNuevo == EstadoSesion.COMPLETADA
+                && estadoAnterior != EstadoSesion.APROBADA) {
+            throw new IllegalStateException("Solo se puede completar una sesión que esté APROBADA");
+        }
+
         sesion.setEstado(estadoNuevo);
         Sesion actualizada = sesionRepository.save(sesion);
 
