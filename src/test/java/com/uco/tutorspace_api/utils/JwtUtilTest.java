@@ -1,4 +1,4 @@
-package com.uco.tutorspace_api.Utils;
+package com.uco.tutorspace_api.utils;
 
 import com.uco.tutorspace_api.domain.Usuario;
 import com.uco.tutorspace_api.domain.enums.RolUsuario;
