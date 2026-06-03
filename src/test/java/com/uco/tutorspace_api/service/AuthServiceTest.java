@@ -1,7 +1,7 @@
 package com.uco.tutorspace_api.service;
 
-import com.uco.tutorspace_api.Utils.EmailValidator;
-import com.uco.tutorspace_api.Utils.JwtUtil;
+import com.uco.tutorspace_api.utils.EmailValidator;
+import com.uco.tutorspace_api.utils.JwtUtil;
 import com.uco.tutorspace_api.domain.Estudiante;
 import com.uco.tutorspace_api.domain.Usuario;
 import com.uco.tutorspace_api.domain.dto.AuthResponse;
