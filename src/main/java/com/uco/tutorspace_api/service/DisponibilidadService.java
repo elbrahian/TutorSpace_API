@@ -1,6 +1,6 @@
 package com.uco.tutorspace_api.service;
 
-import com.uco.tutorspace_api.Utils.HorarioValidator;
+import com.uco.tutorspace_api.utils.HorarioValidator;
 import com.uco.tutorspace_api.domain.Disponibilidad;
 import com.uco.tutorspace_api.domain.Tutor;
 import com.uco.tutorspace_api.domain.dto.CrearDisponibilidadRequest;
@@ -12,22 +12,24 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
 public class DisponibilidadService {
+
+    private static final String DISPONIBILIDAD_NO_ENCONTRADA = "Disponibilidad no encontrada";
+
     private final DisponibilidadRepository disponibilidadRepository;
     private final TutorRepository tutorRepository;
     private final HorarioValidator horarioValidator;
 
     public DisponibilidadResponse crearDisponibilidad(Long tutorId,
                                                       CrearDisponibilidadRequest request) {
-        // Validar rango horario
         if (!horarioValidator.esRangoValido(request.horaInicio(), request.horaFin())) {
-            throw new RuntimeException("La hora de inicio debe ser anterior a la hora de fin");
+            throw new IllegalArgumentException("La hora de inicio debe ser anterior a la hora de fin");
         }
 
-        // Validar solapamiento con franjas existentes del tutor
         List<Disponibilidad> solapadas = disponibilidadRepository.findSolapadas(
                 tutorId,
                 request.dia(),
@@ -36,11 +38,11 @@ public class DisponibilidadService {
         );
 
         if (!solapadas.isEmpty()) {
-            throw new RuntimeException("La franja se solapa con una disponibilidad existente");
+            throw new IllegalStateException("La franja se solapa con una disponibilidad existente");
         }
 
         Tutor tutor = tutorRepository.findById(tutorId)
-                .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
+                .orElseThrow(() -> new NoSuchElementException("Tutor no encontrado"));
 
         Disponibilidad disponibilidad = new Disponibilidad();
         disponibilidad.setTutor(tutor);
@@ -61,32 +63,29 @@ public class DisponibilidadService {
 
     public void eliminarDisponibilidad(Long disponibilidadId, Long tutorId) {
         Disponibilidad d = disponibilidadRepository.findById(disponibilidadId)
-                .orElseThrow(() -> new RuntimeException("Disponibilidad no encontrada"));
+                .orElseThrow(() -> new NoSuchElementException(DISPONIBILIDAD_NO_ENCONTRADA));
 
-        // Verificar que pertenece al tutor que hace la petición
         if (!d.getTutor().getId().equals(tutorId)) {
-            throw new RuntimeException("No tienes permiso para eliminar esta disponibilidad");
+            throw new IllegalStateException("No tienes permiso para eliminar esta disponibilidad");
         }
 
         if (d.getEstado() == EstadoDisponibilidad.BLOQUEADA) {
-            throw new RuntimeException("No se puede eliminar una franja bloqueada por una sesión");
+            throw new IllegalStateException("No se puede eliminar una franja bloqueada por una sesión");
         }
 
         disponibilidadRepository.delete(d);
     }
 
-    // Llamado automáticamente desde SesionService (Sprint 3)
     public void bloquearFranja(Long disponibilidadId) {
         Disponibilidad d = disponibilidadRepository.findById(disponibilidadId)
-                .orElseThrow(() -> new RuntimeException("Disponibilidad no encontrada"));
+                .orElseThrow(() -> new NoSuchElementException(DISPONIBILIDAD_NO_ENCONTRADA));
         d.setEstado(EstadoDisponibilidad.BLOQUEADA);
         disponibilidadRepository.save(d);
     }
 
-    // Llamado automáticamente cuando se cancela sesión (Sprint 3)
     public void liberarFranja(Long disponibilidadId) {
         Disponibilidad d = disponibilidadRepository.findById(disponibilidadId)
-                .orElseThrow(() -> new RuntimeException("Disponibilidad no encontrada"));
+                .orElseThrow(() -> new NoSuchElementException(DISPONIBILIDAD_NO_ENCONTRADA));
         d.setEstado(EstadoDisponibilidad.DISPONIBLE);
         disponibilidadRepository.save(d);
     }
