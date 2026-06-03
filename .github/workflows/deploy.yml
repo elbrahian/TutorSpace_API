@@ -1,0 +1,27 @@
+name: Deploy Backend a Staging
+
+on:
+  push:
+    branches: [Develop]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build del JAR
+        run: mvn clean package -DskipTests
+
+      - name: Deploy a Railway
+        uses: bervProject/railway-deploy@main
+        with:
+          railway_token: ${{ secrets.RAILWAY_TOKEN }}
+          service: tutorspaceapi
