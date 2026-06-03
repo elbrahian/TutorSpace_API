@@ -7,6 +7,7 @@ import com.uco.tutorspace_api.domain.Tutor;
 import com.uco.tutorspace_api.domain.dto.CalificacionSesionRequest;
 import com.uco.tutorspace_api.domain.dto.CalificacionSesionResponse;
 import com.uco.tutorspace_api.domain.enums.EstadoSesion;
+import com.uco.tutorspace_api.exceptions.CalificacionTutoriaException;
 import com.uco.tutorspace_api.repositories.CalificacionSesionRepository;
 import com.uco.tutorspace_api.repositories.EstudianteRepository;
 import com.uco.tutorspace_api.repositories.SesionRepository;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 
 import java.time.LocalDate;
@@ -137,15 +139,16 @@ class CalificacionSesionServiceTest {
     }
 
     @Test
-    @DisplayName("calificarSesion sobre sesión inexistente debe lanzar excepción")
+    @DisplayName("calificarSesion sobre sesión inexistente debe lanzar 404")
     void calificarSesion_sesionInexistente_debeLanzarExcepcion() {
         when(sesionRepository.findById(SESION_ID)).thenReturn(Optional.empty());
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () ->
+        CalificacionTutoriaException exception = assertThrows(CalificacionTutoriaException.class, () ->
                 calificacionSesionService.calificarSesion(ESTUDIANTE_ID, SESION_ID, request)
         );
 
         assertEquals("Sesión no encontrada", exception.getMessage());
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
         verify(calificacionSesionRepository, never()).save(any());
     }
 
@@ -165,31 +168,33 @@ class CalificacionSesionServiceTest {
     }
 
     @Test
-    @DisplayName("calificarSesion de una sesión no COMPLETADA debe lanzar excepción (RF-07)")
+    @DisplayName("calificarSesion de una sesión no COMPLETADA debe lanzar 409 (RF-07)")
     void calificarSesion_sesionNoCompletada_debeLanzarExcepcion() {
         sesionMock.setEstado(EstadoSesion.APROBADA);
         when(sesionRepository.findById(SESION_ID)).thenReturn(Optional.of(sesionMock));
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () ->
+        CalificacionTutoriaException exception = assertThrows(CalificacionTutoriaException.class, () ->
                 calificacionSesionService.calificarSesion(ESTUDIANTE_ID, SESION_ID, request)
         );
 
         assertEquals("Solo puedes calificar sesiones completadas", exception.getMessage());
+        assertEquals(HttpStatus.CONFLICT, exception.getStatus());
         verify(calificacionSesionRepository, never()).save(any());
     }
 
     @Test
-    @DisplayName("calificarSesion ya calificada debe lanzar CalificacionDuplicadaException (RF-06)")
+    @DisplayName("calificarSesion ya calificada debe lanzar 409 Conflict (RF-06)")
     void calificarSesion_yaCalificada_debeLanzarDuplicada() {
         when(sesionRepository.findById(SESION_ID)).thenReturn(Optional.of(sesionMock));
         when(calificacionSesionRepository.existsBySesionIdAndEstudianteId(SESION_ID, ESTUDIANTE_ID))
                 .thenReturn(true);
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () ->
+        CalificacionTutoriaException exception = assertThrows(CalificacionTutoriaException.class, () ->
                 calificacionSesionService.calificarSesion(ESTUDIANTE_ID, SESION_ID, request)
         );
 
         assertEquals("Ya calificaste esta sesión", exception.getMessage());
+        assertEquals(HttpStatus.CONFLICT, exception.getStatus());
         verify(calificacionSesionRepository, never()).save(any());
     }
 }

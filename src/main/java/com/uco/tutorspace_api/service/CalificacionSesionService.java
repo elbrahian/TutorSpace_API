@@ -6,10 +6,12 @@ import com.uco.tutorspace_api.domain.Sesion;
 import com.uco.tutorspace_api.domain.dto.CalificacionSesionRequest;
 import com.uco.tutorspace_api.domain.dto.CalificacionSesionResponse;
 import com.uco.tutorspace_api.domain.enums.EstadoSesion;
+import com.uco.tutorspace_api.exceptions.CalificacionTutoriaException;
 import com.uco.tutorspace_api.repositories.CalificacionSesionRepository;
 import com.uco.tutorspace_api.repositories.EstudianteRepository;
 import com.uco.tutorspace_api.repositories.SesionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -25,7 +27,8 @@ public class CalificacionSesionService {
                                                       CalificacionSesionRequest request) {
 
         Sesion sesion = sesionRepository.findById(sesionId)
-                .orElseThrow(() -> new RuntimeException("Sesión no encontrada"));
+                .orElseThrow(() -> new CalificacionTutoriaException(
+                        "Sesión no encontrada", HttpStatus.NOT_FOUND));
 
         // RF-05 — solo el estudiante dueño de la sesión puede calificarla
         if (!sesion.getEstudiante().getId().equals(estudianteId)) {
@@ -34,16 +37,19 @@ public class CalificacionSesionService {
 
         // RF-07 / E1 — solo sesiones COMPLETADA
         if (sesion.getEstado() != EstadoSesion.COMPLETADA) {
-            throw new RuntimeException("Solo puedes calificar sesiones completadas");
+            throw new CalificacionTutoriaException(
+                    "Solo puedes calificar sesiones completadas", HttpStatus.CONFLICT);
         }
 
-        // RF-06 / E2 — no se permite calificar dos veces
+        // RF-06 / E2 — no se permite calificar dos veces => 409 Conflict
         if (calificacionSesionRepository.existsBySesionIdAndEstudianteId(sesionId, estudianteId)) {
-            throw new RuntimeException("Ya calificaste esta sesión");
+            throw new CalificacionTutoriaException(
+                    "Ya calificaste esta sesión", HttpStatus.CONFLICT);
         }
 
         Estudiante estudiante = estudianteRepository.findById(estudianteId)
-                .orElseThrow(() -> new RuntimeException("Estudiante no encontrado"));
+                .orElseThrow(() -> new CalificacionTutoriaException(
+                        "Estudiante no encontrado", HttpStatus.NOT_FOUND));
 
         CalificacionSesion calificacion = new CalificacionSesion();
         calificacion.setSesion(sesion);
