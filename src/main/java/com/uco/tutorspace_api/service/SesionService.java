@@ -95,7 +95,7 @@ public class SesionService {
         // y no se completan sesiones PENDIENTES o CANCELADAS por error.
         if (estadoNuevo == EstadoSesion.COMPLETADA
                 && estadoAnterior != EstadoSesion.APROBADA) {
-            throw new RuntimeException("Solo se puede completar una sesión que esté APROBADA");
+            throw new IllegalStateException("Solo se puede completar una sesión que esté APROBADA");
         }
 
         sesion.setEstado(estadoNuevo);
