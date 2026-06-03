@@ -15,10 +15,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/estudiante")
+@RequestMapping("/sesiones")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ESTUDIANTE')")
-@Tag(name = "Calificaciones", description = "Calificación de sesiones por el estudiante")
+@Tag(name = "Evaluación de tutorías", description = "Evaluación de sesiones por el estudiante (MNT-12)")
 public class CalificacionSesionController {
 
     private final CalificacionSesionService calificacionSesionService;
@@ -27,15 +27,17 @@ public class CalificacionSesionController {
         return ((CustomUserDetails) auth.getPrincipal()).getId();
     }
 
-    @Operation(summary = "Calificar sesión",
-            description = "El estudiante califica una sesión COMPLETADA (1-5) con comentario opcional")
-    @PostMapping("/sesiones/{sesionId}/calificacion")
-    public ResponseEntity<CalificacionSesionResponse> calificar(
-            @PathVariable Long sesionId,
+    @Operation(summary = "Evaluar sesión",
+            description = "El estudiante participante evalúa una sesión COMPLETADA: " +
+                    "calificación entera 1-5 y comentario opcional (máx. 500). " +
+                    "Solo se permite una evaluación por sesión/estudiante (409 si ya existe).")
+    @PostMapping("/{id}/evaluacion")
+    public ResponseEntity<CalificacionSesionResponse> evaluar(
+            @PathVariable Long id,
             @Valid @RequestBody CalificacionSesionRequest request,
             Authentication auth) {
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(calificacionSesionService.calificarSesion(getEstudianteId(auth), sesionId, request));
+                .body(calificacionSesionService.calificarSesion(getEstudianteId(auth), id, request));
     }
 }
