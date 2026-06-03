@@ -1,6 +1,5 @@
 package com.uco.tutorspace_api.controllers;
 
-import com.uco.tutorspace_api.config.CustomUserDetails;
 import com.uco.tutorspace_api.domain.dto.MateriaResponse;
 import com.uco.tutorspace_api.domain.dto.TutorBusquedaResponse;
 import com.uco.tutorspace_api.service.BusquedaTutorService;
@@ -13,7 +12,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -30,19 +28,14 @@ public class EstudianteController {
     private final BusquedaTutorService busquedaTutorService;
     private final MateriaService materiaService;
 
-    private Long getEstudianteId(Authentication auth) {
-        return ((CustomUserDetails) auth.getPrincipal()).getId();
-    }
-
     @Operation(summary = "Buscar tutores", description = "Busca tutores disponibles por materia con paginación")
     @GetMapping("/tutores/buscar")
     @PreAuthorize("hasRole('ESTUDIANTE')")
-    public ResponseEntity<?> buscar(
+    public ResponseEntity<Object> buscar(
             @RequestParam(required = false) Long materiaId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        // Si no hay materiaId retornar lista vacía
         if (materiaId == null) {
             return ResponseEntity.ok(Page.empty());
         }
