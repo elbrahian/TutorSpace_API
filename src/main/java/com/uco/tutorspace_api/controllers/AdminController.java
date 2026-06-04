@@ -1,6 +1,7 @@
 package com.uco.tutorspace_api.controllers;
 
 import com.uco.tutorspace_api.domain.dto.*;
+import com.uco.tutorspace_api.domain.enums.EstadoSesion;
 import com.uco.tutorspace_api.service.AuditoriaService;
 import com.uco.tutorspace_api.service.MateriaService;
 import com.uco.tutorspace_api.service.TutorService;
@@ -29,25 +30,37 @@ public class AdminController {
     private final TutorService tutorService;
     private final MateriaService materiaService;
 
-    //NUEVO
+    // Se inyecta el service de auditoria
     private final AuditoriaService auditoriaService;
 
 
-    // NUEVO
+    // Se crea el get con la url requerida en la documentacion
     @GetMapping("/auditoria/sesiones")
     public ResponseEntity<Page<AuditoriaSesionResponse>> auditoria(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+
+            @RequestParam(required = false)
+            EstadoSesion estadoNuevo,
+
+            @RequestParam(required = false)
+            EstadoSesion estadoAnterior,
+
+            @RequestParam(required = false)
+            String tutor,
+
+            @RequestParam(required = false)
+            String estudiante,
+
+            Pageable pageable
     ) {
 
-        Pageable pageable = PageRequest.of(
-                page,
-                size,
-                Sort.by("fechaCambio").descending()
-        );
-
         return ResponseEntity.ok(
-                auditoriaService.obtenerAuditoria(pageable)
+                auditoriaService.obtenerAuditoria(
+                        estadoNuevo,
+                        estadoAnterior,
+                        tutor,
+                        estudiante,
+                        pageable
+                )
         );
     }
 
