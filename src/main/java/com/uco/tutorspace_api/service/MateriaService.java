@@ -16,7 +16,7 @@ public class MateriaService {
 
     public MateriaResponse crearMateria(CrearMateriaRequest request) {
         if (materiaRepository.findByCodigo(request.codigo()).isPresent()) {
-            throw new RuntimeException("Ya existe una materia con ese código");
+            throw new IllegalStateException("Ya existe una materia con ese código");
         }
 
         Materia materia = new Materia();
