@@ -1,5 +1,6 @@
 package com.uco.tutorspace_api.config;
 
+import com.uco.tutorspace_api.exceptions.CalificacionTutoriaException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -12,6 +13,15 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    // MNT-12 — errores de negocio del flujo de evaluación con su propio status
+    // (p. ej. 409 CONFLICT cuando el estudiante ya evaluó la sesión).
+    @ExceptionHandler(CalificacionTutoriaException.class)
+    public ResponseEntity<Map<String, String>> handleCalificacionTutoria(CalificacionTutoriaException ex) {
+        return ResponseEntity.status(ex.getStatus())
+                .body(Map.of("error", ex.getMessage()));
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntime(RuntimeException ex) {
         return ResponseEntity.badRequest()
