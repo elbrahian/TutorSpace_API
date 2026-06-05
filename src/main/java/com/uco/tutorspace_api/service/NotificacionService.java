@@ -10,16 +10,16 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
 public class NotificacionService {
 
     private final NotificacionRepository notificacionRepository;
-    private final SimpMessagingTemplate messagingTemplate;  // WebSocket
+    private final SimpMessagingTemplate messagingTemplate;
 
     public void enviarNotificacion(Usuario usuario, TipoNotificacion tipo, String mensaje) {
-        // 1. Guardar en BD
         Notificacion notificacion = new Notificacion();
         notificacion.setUsuario(usuario);
         notificacion.setTipo(tipo);
@@ -28,7 +28,6 @@ public class NotificacionService {
         notificacion.setFecha(LocalDateTime.now());
 
         Notificacion guardada = notificacionRepository.save(notificacion);
-
 
         messagingTemplate.convertAndSend(
                 "/topic/notificaciones/" + usuario.getId(),
@@ -46,10 +45,10 @@ public class NotificacionService {
 
     public void marcarLeida(Long notificacionId, Long usuarioId) {
         Notificacion notificacion = notificacionRepository.findById(notificacionId)
-                .orElseThrow(() -> new RuntimeException("Notificación no encontrada"));
+                .orElseThrow(() -> new NoSuchElementException("Notificación no encontrada"));
 
         if (!notificacion.getUsuario().getId().equals(usuarioId)) {
-            throw new RuntimeException("No tienes permiso sobre esta notificación");
+            throw new IllegalStateException("No tienes permiso sobre esta notificación");
         }
 
         notificacion.setLeida(true);
