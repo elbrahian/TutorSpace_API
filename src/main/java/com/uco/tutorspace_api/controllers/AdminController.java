@@ -33,26 +33,29 @@ public class AdminController {
     // Se inyecta el service de auditoria
     private final AuditoriaService auditoriaService;
 
-
-    // Se crea el get con la url requerida en la documentacion
     @GetMapping("/auditoria/sesiones")
     public ResponseEntity<Page<AuditoriaSesionResponse>> auditoria(
 
+            // Filtro: estado nuevo de la sesión
             @RequestParam(required = false)
             EstadoSesion estadoNuevo,
 
+            // Filtro: estado anterior de la sesión
             @RequestParam(required = false)
             EstadoSesion estadoAnterior,
 
+            // Filtro: nombre o ID del tutor
             @RequestParam(required = false)
             String tutor,
 
+            // Filtro: nombre o ID del estudiante
             @RequestParam(required = false)
             String estudiante,
 
+            // Parámetros de paginación inyectados automáticamente por Spring
             Pageable pageable
     ) {
-
+        // Delega la lógica de consulta al servicio de auditoría y retorna HTTP 200 con el resultado
         return ResponseEntity.ok(
                 auditoriaService.obtenerAuditoria(
                         estadoNuevo,
