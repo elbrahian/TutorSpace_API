@@ -1,6 +1,6 @@
 package com.uco.tutorspace_api.service;
 
-import com.uco.tutorspace_api.Utils.HorarioValidator;
+import com.uco.tutorspace_api.utils.HorarioValidator;
 import com.uco.tutorspace_api.domain.Disponibilidad;
 import com.uco.tutorspace_api.domain.Tutor;
 import com.uco.tutorspace_api.domain.dto.CrearDisponibilidadRequest;

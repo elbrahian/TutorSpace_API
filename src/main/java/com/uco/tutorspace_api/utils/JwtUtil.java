@@ -1,4 +1,4 @@
-package com.uco.tutorspace_api.Utils;
+package com.uco.tutorspace_api.utils;
 
 import com.uco.tutorspace_api.domain.Usuario;
 import io.jsonwebtoken.*;
@@ -19,13 +19,11 @@ public class JwtUtil {
     @Value("${jwt.expiration}")
     private long expiration;
 
-    // Construye la clave a partir del secret en Base64
     private SecretKey getKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secret);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    // Genera token con claims: email (subject), rol, id
     public String generateToken(Usuario usuario) {
         return Jwts.builder()
                 .setSubject(usuario.getEmail())
@@ -57,12 +55,11 @@ public class JwtUtil {
     public boolean isTokenValid(String token) {
         try {
             Claims claims = getClaims(token);
-            // Verificar que no esté expirado
             return claims.getExpiration().after(new Date());
         } catch (ExpiredJwtException e) {
-            throw new RuntimeException("El token ha expirado, inicia sesión nuevamente");
+            throw new IllegalStateException("El token ha expirado, inicia sesión nuevamente");
         } catch (JwtException e) {
-            throw new RuntimeException("Token inválido");
+            throw new IllegalArgumentException("Token inválido");
         }
     }
 
