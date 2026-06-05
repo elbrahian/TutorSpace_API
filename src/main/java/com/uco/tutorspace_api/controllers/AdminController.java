@@ -1,6 +1,8 @@
 package com.uco.tutorspace_api.controllers;
 
 import com.uco.tutorspace_api.domain.dto.*;
+import com.uco.tutorspace_api.domain.enums.EstadoSesion;
+import com.uco.tutorspace_api.service.AuditoriaService;
 import com.uco.tutorspace_api.service.MateriaService;
 import com.uco.tutorspace_api.service.ReporteDesempenoTutorService;
 import com.uco.tutorspace_api.service.TutorService;
@@ -9,6 +11,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,6 +32,43 @@ public class AdminController {
     private final TutorService tutorService;
     private final MateriaService materiaService;
     private final ReporteDesempenoTutorService reporteDesempenoTutorService;
+
+    // Se inyecta el service de auditoria
+    private final AuditoriaService auditoriaService;
+
+    @GetMapping("/auditoria/sesiones")
+    public ResponseEntity<Page<AuditoriaSesionResponse>> auditoria(
+
+            // Filtro: estado nuevo de la sesión
+            @RequestParam(required = false)
+            EstadoSesion estadoNuevo,
+
+            // Filtro: estado anterior de la sesión
+            @RequestParam(required = false)
+            EstadoSesion estadoAnterior,
+
+            // Filtro: nombre o ID del tutor
+            @RequestParam(required = false)
+            String tutor,
+
+            // Filtro: nombre o ID del estudiante
+            @RequestParam(required = false)
+            String estudiante,
+
+            // Parámetros de paginación inyectados automáticamente por Spring
+            Pageable pageable
+    ) {
+        // Delega la lógica de consulta al servicio de auditoría y retorna HTTP 200 con el resultado
+        return ResponseEntity.ok(
+                auditoriaService.obtenerAuditoria(
+                        estadoNuevo,
+                        estadoAnterior,
+                        tutor,
+                        estudiante,
+                        pageable
+                )
+        );
+    }
 
     @Operation(summary = "Registrar tutor", description = "Crea un nuevo tutor en el sistema")
     @PostMapping("/tutores")
