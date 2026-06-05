@@ -2,6 +2,7 @@ package com.uco.tutorspace_api.controllers;
 
 import com.uco.tutorspace_api.domain.dto.*;
 import com.uco.tutorspace_api.service.MateriaService;
+import com.uco.tutorspace_api.service.ReporteDesempenoTutorService;
 import com.uco.tutorspace_api.service.TutorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -23,6 +25,7 @@ import java.util.List;
 public class AdminController {
     private final TutorService tutorService;
     private final MateriaService materiaService;
+    private final ReporteDesempenoTutorService reporteDesempenoTutorService;
 
     @Operation(summary = "Registrar tutor", description = "Crea un nuevo tutor en el sistema")
     @PostMapping("/tutores")
@@ -35,6 +38,14 @@ public class AdminController {
     @GetMapping("/tutores")
     public ResponseEntity<List<TutorResponse>> listarTutores() {
         return ResponseEntity.ok(tutorService.listarTutores());
+    }
+
+    @Operation(summary = "Reporte de desempeño de tutores", description = "Obtiene métricas agregadas de sesiones por tutor")
+    @GetMapping("/reportes/tutores")
+    public ResponseEntity<List<ReporteDesempenoTutorResponse>> reporteDesempenoTutores(
+            @RequestParam(required = false) LocalDate fechaInicio,
+            @RequestParam(required = false) LocalDate fechaFin) {
+        return ResponseEntity.ok(reporteDesempenoTutorService.obtenerReporte(fechaInicio, fechaFin));
     }
 
     @Operation(summary = "Desactivar tutor", description = "Desactiva un tutor por su ID")
