@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
@@ -28,35 +29,32 @@ public class SesionService {
     private final DisponibilidadService disponibilidadService;
     private final HistorialSesionService historialSesionService;
     private final NotificacionService notificacionService;
+    private final ChatService chatService; // MNT-05
 
-    // HU-09 — el tutor crea la sesión (debe existir chat previo)
     public SesionResponse crearSesion(Long tutorId, CrearSesionRequest request) {
         Tutor tutor = tutorRepository.findById(tutorId)
-                .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
+                .orElseThrow(() -> new NoSuchElementException("Tutor no encontrado"));
 
         Estudiante estudiante = estudianteRepository.findById(request.estudianteId())
-                .orElseThrow(() -> new RuntimeException("Estudiante no encontrado"));
+                .orElseThrow(() -> new NoSuchElementException("Estudiante no encontrado"));
 
-        // HU-09 CA-01 — verificar que existe chat previo entre tutor y estudiante
         boolean existeChat = chatRepository
                 .existsByTutorIdAndEstudianteId(tutorId, request.estudianteId());
 
         if (!existeChat) {
-            throw new RuntimeException(
+            throw new IllegalStateException(
                     "Debe existir una conversación previa para crear la sesión"
             );
         }
 
-        // Obtener y validar disponibilidad
         Disponibilidad disponibilidad = disponibilidadRepository
                 .findById(request.disponibilidadId())
-                .orElseThrow(() -> new RuntimeException("Disponibilidad no encontrada"));
+                .orElseThrow(() -> new NoSuchElementException("Disponibilidad no encontrada"));
 
         if (disponibilidad.getEstado() == EstadoDisponibilidad.BLOQUEADA) {
-            throw new RuntimeException("La franja horaria ya está ocupada");
+            throw new IllegalStateException("La franja horaria ya está ocupada");
         }
 
-        // Crear sesión
         Sesion sesion = new Sesion();
         sesion.setTutor(tutor);
         sesion.setEstudiante(estudiante);
@@ -64,56 +62,75 @@ public class SesionService {
         sesion.setFecha(request.fecha());
         sesion.setHoraInicio(request.horaInicio());
         sesion.setHoraFin(request.horaFin());
-        sesion.setEstado(EstadoSesion.PENDIENTE);  // HU-09 CA-03
+        sesion.setEstado(EstadoSesion.PENDIENTE);
 
         Sesion guardada = sesionRepository.save(sesion);
 
-        // HU-10 — bloquear franja automáticamente
         disponibilidadService.bloquearFranja(disponibilidad.getId());
 
-        // Registrar en historial
         historialSesionService.registrarCambio(guardada, EstadoSesion.PENDIENTE, EstadoSesion.PENDIENTE);
 
-        // Notificar al estudiante
         notificacionService.enviarNotificacion(
                 estudiante,
                 TipoNotificacion.SESION_CREADA,
                 "El tutor " + tutor.getNombre() + " agendó una sesión contigo el " + request.fecha()
         );
 
+        // MNT-05 — mensaje automático al crear sesión
+        chatService.enviarMensajeSistema(
+                tutor.getId(),
+                estudiante.getId(),
+                "Se agendó una sesión para el " + request.fecha()
+                        + " de " + request.horaInicio()
+                        + " a " + request.horaFin()
+        );
+
         return toResponse(guardada);
     }
 
-    // HU-10 — solo el tutor puede cambiar el estado
     public SesionResponse cambiarEstado(Long sesionId, Long tutorId,
                                         CambiarEstadoSesionRequest request) {
         Sesion sesion = sesionRepository.findById(sesionId)
-                .orElseThrow(() -> new RuntimeException("Sesión no encontrada"));
+                .orElseThrow(() -> new NoSuchElementException("Sesión no encontrada"));
 
-        // Verificar que el tutor es dueño de la sesión
         if (!sesion.getTutor().getId().equals(tutorId)) {
-            throw new RuntimeException("No tienes permiso para modificar esta sesión");
+            throw new IllegalStateException("No tienes permiso para modificar esta sesión");
         }
 
         EstadoSesion estadoAnterior = sesion.getEstado();
         EstadoSesion estadoNuevo = request.nuevoEstado();
 
+        if (estadoNuevo == EstadoSesion.COMPLETADA
+                && estadoAnterior != EstadoSesion.APROBADA) {
+            throw new IllegalStateException("Solo se puede completar una sesión que esté APROBADA");
+        }
+
         sesion.setEstado(estadoNuevo);
         Sesion actualizada = sesionRepository.save(sesion);
 
-        // Registrar cambio en historial automáticamente
         historialSesionService.registrarCambio(actualizada, estadoAnterior, estadoNuevo);
 
-        // Si se cancela, liberar la franja (HU-10 CA-03)
         if (estadoNuevo == EstadoSesion.CANCELADA) {
             disponibilidadService.liberarFranja(sesion.getDisponibilidad().getId());
         }
 
-        // Notificar al estudiante del cambio (HU-10 CA-02)
         notificacionService.enviarNotificacion(
                 sesion.getEstudiante(),
                 TipoNotificacion.CAMBIO_ESTADO,
                 "Tu sesión del " + sesion.getFecha() + " cambió a estado: " + estadoNuevo
+        );
+
+        // MNT-05 — mensaje automático al cambiar estado
+        String textoMensaje = switch (estadoNuevo) {
+            case APROBADA  -> "La sesión del " + sesion.getFecha() + " fue aprobada por el tutor";
+            case CANCELADA -> "La sesión del " + sesion.getFecha() + " fue cancelada";
+            default        -> "La sesión del " + sesion.getFecha() + " cambió a estado: " + estadoNuevo;
+        };
+
+        chatService.enviarMensajeSistema(
+                sesion.getTutor().getId(),
+                sesion.getEstudiante().getId(),
+                textoMensaje
         );
 
         return toResponse(actualizada);

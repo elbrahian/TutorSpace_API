@@ -7,6 +7,7 @@ public record MensajeResponse(
         Long emisorId,
         String nombreEmisor,
         String contenido,
-        LocalDateTime fecha
+        LocalDateTime fecha,
+        boolean esSistema
 ) {
 }

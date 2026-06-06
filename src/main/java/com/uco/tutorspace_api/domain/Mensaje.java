@@ -20,7 +20,7 @@ public class Mensaje {
     private Chat chat;
 
     @ManyToOne
-    @JoinColumn(name = "emisor_id", nullable = false)
+    @JoinColumn(name = "emisor_id", nullable = true)
     private Usuario emisor;
 
     @Column(nullable = false, length = 500)
@@ -29,4 +29,6 @@ public class Mensaje {
     @Column(nullable = false)
     private LocalDateTime fecha = LocalDateTime.now();
 
+    @Column(nullable = false)
+    private boolean esSistema = false;
 }
