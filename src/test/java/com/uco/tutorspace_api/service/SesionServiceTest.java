@@ -25,6 +25,8 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -39,6 +41,7 @@ class SesionServiceTest {
     @Mock private DisponibilidadService disponibilidadService;
     @Mock private HistorialSesionService historialSesionService;
     @Mock private NotificacionService notificacionService;
+    @Mock private ChatService chatService;
 
     @InjectMocks
     private SesionService sesionService;
