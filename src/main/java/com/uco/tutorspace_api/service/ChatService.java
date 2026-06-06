@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
@@ -27,7 +28,6 @@ public class ChatService {
     private final NotificacionService notificacionService;
     private final SimpMessagingTemplate messagingTemplate;
 
-    // HU-08 — solo el estudiante puede iniciar el chat
     public ChatResponse iniciarChat(Long estudianteId, IniciarChatRequest request) {
         if (chatRepository.existsByTutorIdAndEstudianteId(request.tutorId(), estudianteId)) {
             Chat existente = chatRepository
@@ -37,10 +37,10 @@ public class ChatService {
         }
 
         Tutor tutor = tutorRepository.findById(request.tutorId())
-                .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
+                .orElseThrow(() -> new NoSuchElementException("Tutor no encontrado"));
 
         Estudiante estudiante = estudianteRepository.findById(estudianteId)
-                .orElseThrow(() -> new RuntimeException("Estudiante no encontrado"));
+                .orElseThrow(() -> new NoSuchElementException("Estudiante no encontrado"));
 
         Chat chat = new Chat();
         chat.setTutor(tutor);
@@ -61,24 +61,24 @@ public class ChatService {
     public MensajeResponse enviarMensaje(Long chatId, Long emisorId,
                                          EnviarMensajeRequest request) {
         Chat chat = chatRepository.findById(chatId)
-                .orElseThrow(() -> new RuntimeException("Chat no encontrado"));
+                .orElseThrow(() -> new NoSuchElementException("Chat no encontrado"));
 
-        // Verificar que el emisor pertenece al chat
         boolean esTutor = chat.getTutor().getId().equals(emisorId);
         boolean esEstudiante = chat.getEstudiante().getId().equals(emisorId);
 
         if (!esTutor && !esEstudiante) {
-            throw new RuntimeException("No tienes acceso a este chat");
+            throw new IllegalStateException("No tienes acceso a este chat");
         }
 
         Usuario emisor = usuarioRepository.findById(emisorId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new NoSuchElementException("Usuario no encontrado"));
 
         Mensaje mensaje = new Mensaje();
         mensaje.setChat(chat);
         mensaje.setEmisor(emisor);
         mensaje.setContenido(sanitizar(request.contenido()));
         mensaje.setFecha(LocalDateTime.now());
+        mensaje.setEsSistema(false);
 
         Mensaje guardado = mensajeRepository.save(mensaje);
         MensajeResponse response = toMensajeResponse(guardado);
@@ -95,16 +95,59 @@ public class ChatService {
         return response;
     }
 
+    // MNT-05 — mensaje automático del sistema
+    public MensajeResponse enviarMensajeSistema(Long tutorId, Long estudianteId,
+                                                String contenido) {
+        Chat chat;
+        if (chatRepository.existsByTutorIdAndEstudianteId(tutorId, estudianteId)) {
+            chat = chatRepository.findByTutorIdAndEstudianteId(tutorId, estudianteId)
+                    .orElseThrow(() -> new NoSuchElementException("Chat no encontrado"));
+        } else {
+            Tutor tutor = tutorRepository.findById(tutorId)
+                    .orElseThrow(() -> new NoSuchElementException("Tutor no encontrado"));
+            Estudiante estudiante = estudianteRepository.findById(estudianteId)
+                    .orElseThrow(() -> new NoSuchElementException("Estudiante no encontrado"));
+
+            Chat nuevoChat = new Chat();
+            nuevoChat.setTutor(tutor);
+            nuevoChat.setEstudiante(estudiante);
+            nuevoChat.setFechaCreacion(LocalDateTime.now());
+            chat = chatRepository.save(nuevoChat);
+        }
+
+        Mensaje mensaje = new Mensaje();
+        mensaje.setChat(chat);
+        mensaje.setEmisor(null);
+        mensaje.setContenido(contenido);
+        mensaje.setFecha(LocalDateTime.now());
+        mensaje.setEsSistema(true);
+
+        Mensaje guardado = mensajeRepository.save(mensaje);
+
+        MensajeResponse response = new MensajeResponse(
+                guardado.getId(),
+                null,
+                "Sistema",
+                guardado.getContenido(),
+                guardado.getFecha(),
+                true
+        );
+
+        messagingTemplate.convertAndSend("/topic/chat/" + chat.getId(), response);
+
+        return response;
+    }
+
     public Page<MensajeResponse> obtenerHistorial(Long chatId, Long usuarioId,
                                                   Pageable pageable) {
         Chat chat = chatRepository.findById(chatId)
-                .orElseThrow(() -> new RuntimeException("Chat no encontrado"));
+                .orElseThrow(() -> new NoSuchElementException("Chat no encontrado"));
 
         boolean tieneAcceso = chat.getTutor().getId().equals(usuarioId)
                 || chat.getEstudiante().getId().equals(usuarioId);
 
         if (!tieneAcceso) {
-            throw new RuntimeException("No tienes acceso a este chat");
+            throw new IllegalStateException("No tienes acceso a este chat");
         }
 
         return mensajeRepository.findByChatIdOrderByFechaAsc(chatId, pageable)
@@ -132,10 +175,11 @@ public class ChatService {
     public MensajeResponse toMensajeResponse(Mensaje m) {
         return new MensajeResponse(
                 m.getId(),
-                m.getEmisor().getId(),
-                m.getEmisor().getNombre(),
+                m.getEmisor() != null ? m.getEmisor().getId() : null,
+                m.getEmisor() != null ? m.getEmisor().getNombre() : "Sistema",
                 m.getContenido(),
-                m.getFecha()
+                m.getFecha(),
+                m.isEsSistema()
         );
     }
 
