@@ -28,6 +28,7 @@ public class ChatService {
     private final NotificacionService notificacionService;
     private final SimpMessagingTemplate messagingTemplate;
 
+    // Retorna el chat existente o crea uno nuevo si no existe
     public ChatResponse iniciarChat(Long estudianteId, IniciarChatRequest request) {
         if (chatRepository.existsByTutorIdAndEstudianteId(request.tutorId(), estudianteId)) {
             Chat existente = chatRepository
@@ -58,6 +59,7 @@ public class ChatService {
         return toResponse(guardado);
     }
 
+    // Valida acceso, sanitiza contenido y hace broadcast por WebSocket
     public MensajeResponse enviarMensaje(Long chatId, Long emisorId,
                                          EnviarMensajeRequest request) {
         Chat chat = chatRepository.findById(chatId)
@@ -95,7 +97,10 @@ public class ChatService {
         return response;
     }
 
-    // MNT-05 — mensaje automático del sistema
+    /**
+     * MNT-05 — Envía un mensaje automático del sistema al chat tutor-estudiante.
+     * Si el chat no existe, lo crea. El emisor queda en null y esSistema = true.
+     */
     public MensajeResponse enviarMensajeSistema(Long tutorId, Long estudianteId,
                                                 String contenido) {
         Chat chat;
@@ -117,7 +122,7 @@ public class ChatService {
 
         Mensaje mensaje = new Mensaje();
         mensaje.setChat(chat);
-        mensaje.setEmisor(null);
+        mensaje.setEmisor(null); // null = mensaje del sistema
         mensaje.setContenido(contenido);
         mensaje.setFecha(LocalDateTime.now());
         mensaje.setEsSistema(true);
@@ -172,6 +177,7 @@ public class ChatService {
         );
     }
 
+    // emisor null = mensaje del sistema; nombre se reemplaza por "Sistema"
     public MensajeResponse toMensajeResponse(Mensaje m) {
         return new MensajeResponse(
                 m.getId(),
@@ -183,6 +189,7 @@ public class ChatService {
         );
     }
 
+    // Previene XSS escapando caracteres HTML peligrosos
     private String sanitizar(String contenido) {
         if (contenido == null) return "";
         return contenido
