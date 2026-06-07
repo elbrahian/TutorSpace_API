@@ -24,4 +24,18 @@ public interface SesionRepository extends JpaRepository<Sesion, Long> {
             @Param("fechaInicio") LocalDate fechaInicio,
             @Param("fechaFin") LocalDate fechaFin
     );
+
+    @Query("""
+        SELECT m.nombre, COUNT(s.id)
+        FROM Sesion s
+        JOIN s.tutor t
+        JOIN t.materias m
+        WHERE (:fechaInicio IS NULL OR s.fecha >= :fechaInicio)
+        AND (:fechaFin IS NULL OR s.fecha <= :fechaFin)
+        GROUP BY m.id, m.nombre
+        """)
+    List<Object[]> countSesionesByMateria(
+            @Param("fechaInicio") LocalDate fechaInicio,
+            @Param("fechaFin") LocalDate fechaFin
+    );
 }

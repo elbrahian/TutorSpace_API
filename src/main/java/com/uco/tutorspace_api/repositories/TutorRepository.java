@@ -26,4 +26,13 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
     Optional<Tutor> findByIdWithMaterias(@Param("id") Long id);
 
     List<Tutor> findByEstadoOrderByNombreAsc(EstadoUsuario estado);
+
+    @Query("""
+        SELECT m.nombre, COUNT(DISTINCT t.id)
+        FROM Tutor t
+        JOIN t.materias m
+        WHERE t.estado = 'ACTIVO'
+        GROUP BY m.id, m.nombre
+        """)
+    List<Object[]> countTutoresActivosByMateria();
 }
