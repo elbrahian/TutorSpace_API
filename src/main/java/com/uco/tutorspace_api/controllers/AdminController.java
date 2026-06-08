@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -154,7 +155,12 @@ public class AdminController {
         return ResponseEntity.ok(tutorService.retirarMateria(tutorId, materiaId));
     }
 
-    public record ActualizarJornadaRequest(@NotBlank String jornadaGeneral) {}
+    public record ActualizarJornadaRequest(
+            @NotBlank(message = "La jornada es requerida")
+            @Pattern(regexp = "^(MANANA|TARDE|NOCHE)$",
+                    message = "La jornada debe ser MANANA, TARDE o NOCHE")
+            String jornadaGeneral
+    ) {}
 
     @Operation(summary = "Actualizar jornada", description = "Actualiza la jornada laboral de un tutor")
     @PatchMapping("/tutores/{id}/jornada")
