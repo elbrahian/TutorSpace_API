@@ -16,15 +16,11 @@ import java.security.Principal;
 public class ChatWebSocketController {
     private final ChatService chatService;
 
-    // El cliente envía a: /app/chat/{chatId}/mensaje
-    // El servidor hace broadcast a: /topic/chat/{chatId}
     @MessageMapping("/chat/{chatId}/mensaje")
     public void recibirMensaje(@DestinationVariable Long chatId,
                                @Payload EnviarMensajeRequest request,
                                Principal principal) {
-        // Principal viene del JWT — necesita configuración extra (ver nota abajo)
         Long emisorId = ((CustomUserDetails) principal).getId();
         chatService.enviarMensaje(chatId, emisorId, request);
-        // chatService ya hace el broadcast con messagingTemplate internamente
     }
 }
