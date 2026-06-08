@@ -1,9 +1,6 @@
 package com.uco.tutorspace_api.service;
 
-import com.uco.tutorspace_api.domain.Disponibilidad;
-import com.uco.tutorspace_api.domain.Estudiante;
-import com.uco.tutorspace_api.domain.Sesion;
-import com.uco.tutorspace_api.domain.Tutor;
+import com.uco.tutorspace_api.domain.*;
 import com.uco.tutorspace_api.domain.dto.CambiarEstadoSesionRequest;
 import com.uco.tutorspace_api.domain.dto.CrearSesionRequest;
 import com.uco.tutorspace_api.domain.dto.SesionResponse;
@@ -11,7 +8,10 @@ import com.uco.tutorspace_api.domain.enums.EstadoDisponibilidad;
 import com.uco.tutorspace_api.domain.enums.EstadoSesion;
 import com.uco.tutorspace_api.domain.enums.TipoNotificacion;
 import com.uco.tutorspace_api.repositories.*;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -134,6 +134,16 @@ public class SesionService {
                 .stream().map(this::toResponse).toList();
     }
 
+    public Page<SesionResponse> getSesionesByTutorWithFilters(Long tutorId,
+                                                              EstadoSesion estado,
+                                                              LocalDate fechaInicio,
+                                                              LocalDate fechaFin,
+                                                              Pageable pageable) {
+        return sesionRepository
+                .findByTutorIdWithFilters(tutorId, estado, fechaInicio, fechaFin, pageable)
+                .map(this::toResponse);
+    }
+
     public SesionResponse toResponse(Sesion s) {
         return new SesionResponse(
                 s.getId(),
@@ -147,5 +157,36 @@ public class SesionService {
                 s.getEstado(),
                 s.getCreatedAt()
         );
+    }
+    @Transactional
+    public SesionResponse completarSesion(Long sesionId, Long tutorId) {
+        Sesion sesion = sesionRepository.findById(sesionId)
+                .orElseThrow(() -> new NoSuchElementException("Sesión no encontrada: " + sesionId));
+
+        if (!sesion.getTutor().getId().equals(tutorId)) {
+            throw new IllegalStateException("No tienes permiso para modificar esta sesión");
+        }
+
+        if (sesion.getEstado() != EstadoSesion.APROBADA) {
+            throw new IllegalStateException("Solo se pueden completar sesiones en estado APROBADA");
+        }
+
+        if (!sesion.getFecha().isBefore(LocalDate.now())) {
+            throw new IllegalStateException("No se puede completar una sesión cuya fecha no ha ocurrido aún");
+        }
+
+        EstadoSesion estadoAnterior = sesion.getEstado();
+        sesion.setEstado(EstadoSesion.COMPLETADA);
+        sesionRepository.save(sesion);
+
+        historialSesionService.registrarCambio(sesion, estadoAnterior, EstadoSesion.COMPLETADA);
+
+        notificacionService.enviarNotificacion(
+                sesion.getEstudiante(),
+                TipoNotificacion.CAMBIO_ESTADO,
+                "Tu sesión del " + sesion.getFecha() + " ha sido marcada como completada"
+        );
+
+        return toResponse(sesion);
     }
 }

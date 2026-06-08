@@ -2,12 +2,18 @@ package com.uco.tutorspace_api.controllers;
 
 import com.uco.tutorspace_api.config.CustomUserDetails;
 import com.uco.tutorspace_api.domain.dto.*;
+import com.uco.tutorspace_api.domain.enums.EstadoSesion;
 import com.uco.tutorspace_api.service.EvaluacionEstudianteService;
 import com.uco.tutorspace_api.service.SesionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -91,6 +97,33 @@ public class SesionController {
     public ResponseEntity<EvaluacionEstudianteResponse> obtenerEvaluacion(
             @PathVariable Long id) {
         return ResponseEntity.ok(evaluacionEstudianteService.obtenerEvaluacionPorSesion(id));
+    }
+    @GetMapping
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Page<SesionResponse>> getMisSesiones(
+            @RequestParam(required = false) EstadoSesion estado,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "fecha") String sort,
+            Authentication authentication) {
+
+        Long userId = getUserId(authentication);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sort));
+        Page<SesionResponse> sesiones = sesionService.getSesionesByTutorWithFilters(
+                userId, estado, fechaInicio, fechaFin, pageable
+        );
+        return ResponseEntity.ok(sesiones);
+    }
+
+    @PatchMapping("/{id}/completar")
+    @PreAuthorize("hasRole('TUTOR')")
+    public ResponseEntity<SesionResponse> completarSesion(
+            @PathVariable Long id,
+            Authentication authentication) {
+        Long tutorId = getUserId(authentication);
+        return ResponseEntity.ok(sesionService.completarSesion(id, tutorId));
     }
 
 }
