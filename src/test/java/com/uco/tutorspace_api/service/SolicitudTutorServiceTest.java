@@ -20,7 +20,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -133,6 +136,124 @@ class SolicitudTutorServiceTest {
     }
 
     @Test
+    @DisplayName("crearSolicitud con usuario inexistente debe lanzar excepción")
+    void crearSolicitud_withMissingUser_shouldThrowException() {
+        CrearSolicitudTutorRequest request = new CrearSolicitudTutorRequest(
+                List.of(10L),
+                "Quiero ser tutor"
+        );
+
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.empty());
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () ->
+                solicitudTutorService.crearSolicitud(1L, request)
+        );
+
+        assertEquals("Usuario no encontrado", exception.getMessage());
+        verify(solicitudTutorRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("crearSolicitud con usuario que no es estudiante debe lanzar excepción")
+    void crearSolicitud_withNonStudentUser_shouldThrowException() {
+        estudiante.setRol(RolUsuario.TUTOR);
+        CrearSolicitudTutorRequest request = new CrearSolicitudTutorRequest(
+                List.of(10L),
+                "Quiero ser tutor"
+        );
+
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(estudiante));
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () ->
+                solicitudTutorService.crearSolicitud(1L, request)
+        );
+
+        assertEquals("Solo estudiantes pueden solicitar convertirse en tutor", exception.getMessage());
+        verify(solicitudTutorRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("crearSolicitud con materia inexistente debe lanzar excepción")
+    void crearSolicitud_withMissingSubject_shouldThrowException() {
+        CrearSolicitudTutorRequest request = new CrearSolicitudTutorRequest(
+                List.of(10L, 20L),
+                "Quiero ser tutor"
+        );
+
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(estudiante));
+        when(solicitudTutorRepository.existsBySolicitanteIdAndEstado(1L, EstadoSolicitudTutor.PENDIENTE))
+                .thenReturn(false);
+        when(materiaRepository.findAllById(any(Iterable.class))).thenReturn(List.of(materia));
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () ->
+                solicitudTutorService.crearSolicitud(1L, request)
+        );
+
+        assertEquals("Una o más materias no fueron encontradas", exception.getMessage());
+        verify(solicitudTutorRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("crearSolicitud debe ignorar IDs de materia duplicados")
+    void crearSolicitud_withDuplicateSubjectIds_shouldIgnoreDuplicates() {
+        CrearSolicitudTutorRequest request = new CrearSolicitudTutorRequest(
+                List.of(10L, 10L),
+                "Quiero ser tutor"
+        );
+
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(estudiante));
+        when(solicitudTutorRepository.existsBySolicitanteIdAndEstado(1L, EstadoSolicitudTutor.PENDIENTE))
+                .thenReturn(false);
+        when(materiaRepository.findAllById(any(Iterable.class))).thenReturn(List.of(materia));
+        when(solicitudTutorRepository.save(any(SolicitudTutor.class))).thenAnswer(invocation -> {
+            SolicitudTutor guardada = invocation.getArgument(0);
+            guardada.setId(100L);
+            return guardada;
+        });
+
+        SolicitudTutorResponse response = solicitudTutorService.crearSolicitud(1L, request);
+
+        assertEquals(1, response.materias().size());
+    }
+
+    @Test
+    @DisplayName("listarSolicitudes debe retornar solicitudes filtradas")
+    void listarSolicitudes_shouldReturnFilteredRequests() {
+        when(solicitudTutorRepository.findAll(
+                any(Specification.class),
+                any(Sort.class)
+        )).thenReturn(List.of(solicitud));
+
+        List<SolicitudTutorResponse> response = solicitudTutorService.listarSolicitudes(
+                EstadoSolicitudTutor.PENDIENTE,
+                LocalDate.of(2026, 6, 1),
+                LocalDate.of(2026, 6, 30)
+        );
+
+        assertEquals(1, response.size());
+        assertEquals(100L, response.getFirst().id());
+        verify(solicitudTutorRepository).findAll(any(Specification.class), any(Sort.class));
+    }
+
+    @Test
+    @DisplayName("listarSolicitudes con rango inválido debe lanzar excepción")
+    void listarSolicitudes_withInvalidDateRange_shouldThrowException() {
+        RuntimeException exception = assertThrows(RuntimeException.class, () ->
+                solicitudTutorService.listarSolicitudes(
+                        null,
+                        LocalDate.of(2026, 6, 30),
+                        LocalDate.of(2026, 6, 1)
+                )
+        );
+
+        assertEquals("La fecha de inicio no puede ser posterior a la fecha fin", exception.getMessage());
+        verify(solicitudTutorRepository, never()).findAll(
+                any(Specification.class),
+                any(Sort.class)
+        );
+    }
+
+    @Test
     @DisplayName("revisarSolicitud aprobada debe promover usuario a tutor")
     void revisarSolicitud_approved_shouldPromoteUser() {
         RevisarSolicitudTutorRequest request = new RevisarSolicitudTutorRequest(
@@ -168,6 +289,64 @@ class SolicitudTutorServiceTest {
         verify(tutorPromotionRepository, never()).promoverUsuarioATutor(anyLong());
         verify(tutorPromotionRepository, never()).asignarMateriasSolicitadas(anyLong(), anyLong());
         verify(emailService).enviarEstadoSolicitudTutor(estudiante, EstadoSolicitudTutor.RECHAZADA, null);
+    }
+
+    @Test
+    @DisplayName("revisarSolicitud inexistente debe lanzar excepción")
+    void revisarSolicitud_withMissingRequest_shouldThrowException() {
+        RevisarSolicitudTutorRequest request = new RevisarSolicitudTutorRequest(
+                EstadoSolicitudTutor.APROBADA,
+                null
+        );
+
+        when(solicitudTutorRepository.findByIdWithDetalle(100L)).thenReturn(Optional.empty());
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () ->
+                solicitudTutorService.revisarSolicitud(100L, request)
+        );
+
+        assertEquals("Solicitud de tutor no encontrada", exception.getMessage());
+        verify(tutorPromotionRepository, never()).promoverUsuarioATutor(anyLong());
+    }
+
+    @Test
+    @DisplayName("revisarSolicitud ya revisada debe lanzar excepción")
+    void revisarSolicitud_alreadyReviewed_shouldThrowException() {
+        solicitud.setEstado(EstadoSolicitudTutor.RECHAZADA);
+        RevisarSolicitudTutorRequest request = new RevisarSolicitudTutorRequest(
+                EstadoSolicitudTutor.APROBADA,
+                null
+        );
+
+        when(solicitudTutorRepository.findByIdWithDetalle(100L)).thenReturn(Optional.of(solicitud));
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () ->
+                solicitudTutorService.revisarSolicitud(100L, request)
+        );
+
+        assertEquals("Solo se pueden revisar solicitudes pendientes", exception.getMessage());
+        verify(tutorPromotionRepository, never()).promoverUsuarioATutor(anyLong());
+    }
+
+    @Test
+    @DisplayName("revisarSolicitud debe normalizar observaciones")
+    void revisarSolicitud_shouldTrimObservations() {
+        RevisarSolicitudTutorRequest request = new RevisarSolicitudTutorRequest(
+                EstadoSolicitudTutor.RECHAZADA,
+                "  Falta experiencia  "
+        );
+
+        when(solicitudTutorRepository.findByIdWithDetalle(100L)).thenReturn(Optional.of(solicitud));
+        when(solicitudTutorRepository.save(any(SolicitudTutor.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        SolicitudTutorResponse response = solicitudTutorService.revisarSolicitud(100L, request);
+
+        assertEquals("Falta experiencia", response.observaciones());
+        verify(emailService).enviarEstadoSolicitudTutor(
+                estudiante,
+                EstadoSolicitudTutor.RECHAZADA,
+                "Falta experiencia"
+        );
     }
 
     @Test
