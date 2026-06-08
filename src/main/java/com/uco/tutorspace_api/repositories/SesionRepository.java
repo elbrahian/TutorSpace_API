@@ -42,12 +42,16 @@ public interface SesionRepository extends JpaRepository<Sesion, Long> {
     /**
      * Proyección de actividad de sesiones para el reporte de uso por rol (MNT-11).
      * Devuelve filas [fecha, estudianteId, tutorId] dentro del rango indicado.
+     *
+     * El rango siempre llega resuelto (sin null): el servicio sustituye los
+     * límites ausentes por cotas amplias. Esto evita el patrón
+     * ":param IS NULL OR ...", que en PostgreSQL falla con
+     * "could not determine data type of parameter" cuando el bind es null.
      */
     @Query("""
         SELECT s.fecha, s.estudiante.id, s.tutor.id
         FROM Sesion s
-        WHERE (:fechaInicio IS NULL OR s.fecha >= :fechaInicio)
-        AND (:fechaFin IS NULL OR s.fecha <= :fechaFin)
+        WHERE s.fecha >= :fechaInicio AND s.fecha <= :fechaFin
         """)
     List<Object[]> findActividadSesiones(
             @Param("fechaInicio") LocalDate fechaInicio,
