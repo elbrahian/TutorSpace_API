@@ -42,11 +42,20 @@ public class ReporteUsoService {
     private static final DateTimeFormatter ETIQUETA_SEMANA = DateTimeFormatter.ofPattern("dd/MM");
     private static final int MAX_SEMANAS = 12;
 
-    public ReporteUsoResponse obtenerReporte(LocalDate fechaInicio, LocalDate fechaFin) {
-        List<Object[]> sesiones = sesionRepository.findActividadSesiones(fechaInicio, fechaFin);
+    // Cotas amplias usadas cuando el cliente no envía fecha: así se listan
+    // todos los registros y nunca se pasa null a las consultas (evita el error
+    // de PostgreSQL "could not determine data type of parameter").
+    private static final LocalDate FECHA_MINIMA = LocalDate.of(1970, 1, 1);
+    private static final LocalDate FECHA_MAXIMA = LocalDate.of(9999, 12, 31);
 
-        LocalDateTime inicio = fechaInicio == null ? null : fechaInicio.atStartOfDay();
-        LocalDateTime fin = fechaFin == null ? null : fechaFin.atTime(LocalTime.MAX);
+    public ReporteUsoResponse obtenerReporte(LocalDate fechaInicio, LocalDate fechaFin) {
+        LocalDate desde = fechaInicio == null ? FECHA_MINIMA : fechaInicio;
+        LocalDate hasta = fechaFin == null ? FECHA_MAXIMA : fechaFin;
+
+        List<Object[]> sesiones = sesionRepository.findActividadSesiones(desde, hasta);
+
+        LocalDateTime inicio = desde.atStartOfDay();
+        LocalDateTime fin = hasta.atTime(LocalTime.MAX);
         List<Object[]> mensajes = mensajeRepository.findActividadMensajes(inicio, fin);
 
         Set<Long> estudiantesActivos = new HashSet<>();
