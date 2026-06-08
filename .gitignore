@@ -6,7 +6,7 @@ application-dev.properties
 application.properties
 
 # Datos de prueba locales
-   src/main/resources/data.sql
+src/main/resources/data.sql
 
 # Archivos de entorno sensibles
 *.env
