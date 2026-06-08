@@ -68,12 +68,22 @@ public class TutorService {
 
     public TutorResponse retirarMateria(Long tutorId, Long materiaId) {
         Tutor tutor = getTutorOrThrow(tutorId);
+        boolean asignada = tutor.getMaterias().stream()
+                .anyMatch(m -> m.getId().equals(materiaId));
+
+        if (!asignada) {
+            throw new RuntimeException("Este tutor no tiene asignada esta materia");
+        }
+
         tutor.getMaterias().removeIf(m -> m.getId().equals(materiaId));
         return toResponse(tutorRepository.save(tutor));
     }
 
     public TutorResponse desactivarTutor(Long tutorId) {
         Tutor tutor = getTutorOrThrow(tutorId);
+        if (tutor.getEstado() == EstadoUsuario.INACTIVO) {
+            throw new RuntimeException("El tutor ya se encuentra inactivo");
+        }
         tutor.setEstado(EstadoUsuario.INACTIVO);
         return toResponse(tutorRepository.save(tutor));
     }
@@ -84,6 +94,9 @@ public class TutorService {
 
     public TutorResponse activarTutor(Long tutorId) {
         Tutor tutor = getTutorOrThrow(tutorId);
+        if (tutor.getEstado() == EstadoUsuario.ACTIVO) {
+            throw new RuntimeException("El tutor ya se encuentra activo");
+        }
         tutor.setEstado(EstadoUsuario.ACTIVO);
         return toResponse(tutorRepository.save(tutor));
     }
