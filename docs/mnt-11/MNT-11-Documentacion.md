@@ -106,6 +106,16 @@ colaborativa del repositorio:
 - **Actividad semanal:** acciones agregadas por semana (lunes que la inicia), una serie por rol.
   Se limita a las **12 semanas más recientes** del conjunto resultante.
 
+### Manejo del rango de fechas
+
+`fechaInicio` y `fechaFin` son opcionales. Cuando alguno no llega, el servicio lo
+sustituye por una cota amplia (`1970-01-01` / `9999-12-31`) **antes** de consultar,
+por lo que sin filtro se listan **todos** los registros. Las consultas de actividad
+usan un `BETWEEN` explícito y **no** el patrón `:param IS NULL OR ...`: ese patrón
+provoca en PostgreSQL el error *"could not determine data type of parameter"* cuando
+el bind es `null` (el motor no infiere el tipo de un `$1 IS NULL` aislado), lo que
+devolvía `0` en todas las métricas.
+
 ## 6. Archivos del cambio
 
 ### Backend — `TutorSpace_API`
@@ -143,7 +153,9 @@ colores y comportamiento:
 
 ## 8. Verificación realizada
 
-- **Backend:** `mvnw compile` ✅ · `mvnw test` → **125 tests, 0 fallos, 0 errores** ✅
+- **Backend:** `mvnw compile` ✅ · `mvnw test` → **128 tests, 0 fallos, 0 errores** ✅
+  (incluye 3 pruebas de integración del endpoint `GET /admin/reportes/uso`: con fechas,
+  sin fechas y control de acceso por rol).
 - **Frontend:** `tsc -b && vite build` ✅ · `eslint` de los archivos del cambio ✅
 - **PDF:** se exporta con la misma utilidad probada por los reportes existentes.
 
