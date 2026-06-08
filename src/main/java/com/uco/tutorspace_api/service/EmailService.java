@@ -17,10 +17,10 @@ import org.springframework.stereotype.Service;
 public class EmailService {
     private final ObjectProvider<JavaMailSender> mailSenderProvider;
 
-    @Value("${tutorspace.mail.enabled:false}")
+    @Value("true")
     private boolean mailEnabled;
 
-    @Value("${tutorspace.mail.from:no-reply@tutorspace.local}")
+    @Value("tutorspacespace@gmail.com")
     private String from;
 
     public void enviarEstadoSolicitudTutor(Usuario solicitante,

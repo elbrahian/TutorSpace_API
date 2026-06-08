@@ -28,4 +28,22 @@ public class TutorPromotionRepository {
                 .setParameter(1, usuarioId)
                 .executeUpdate();
     }
+
+    public void asignarMateriasSolicitadas(Long usuarioId, Long solicitudId) {
+        entityManager.createNativeQuery("""
+                INSERT INTO tutor_materia (tutor_id, materia_id)
+                SELECT ?1, solicitud_materia.materia_id
+                FROM solicitud_tutor_materia solicitud_materia
+                WHERE solicitud_materia.solicitud_tutor_id = ?2
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM tutor_materia tutor_materia
+                    WHERE tutor_materia.tutor_id = ?1
+                    AND tutor_materia.materia_id = solicitud_materia.materia_id
+                )
+                """)
+                .setParameter(1, usuarioId)
+                .setParameter(2, solicitudId)
+                .executeUpdate();
+    }
 }

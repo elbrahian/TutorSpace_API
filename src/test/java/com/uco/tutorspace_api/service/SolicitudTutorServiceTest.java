@@ -147,6 +147,7 @@ class SolicitudTutorServiceTest {
 
         assertEquals(EstadoSolicitudTutor.APROBADA, response.estado());
         verify(tutorPromotionRepository).promoverUsuarioATutor(1L);
+        verify(tutorPromotionRepository).asignarMateriasSolicitadas(1L, 100L);
         verify(emailService).enviarEstadoSolicitudTutor(estudiante, EstadoSolicitudTutor.APROBADA, "Aprobado");
     }
 
@@ -165,6 +166,7 @@ class SolicitudTutorServiceTest {
 
         assertEquals(EstadoSolicitudTutor.RECHAZADA, response.estado());
         verify(tutorPromotionRepository, never()).promoverUsuarioATutor(anyLong());
+        verify(tutorPromotionRepository, never()).asignarMateriasSolicitadas(anyLong(), anyLong());
         verify(emailService).enviarEstadoSolicitudTutor(estudiante, EstadoSolicitudTutor.RECHAZADA, null);
     }
 
@@ -184,5 +186,6 @@ class SolicitudTutorServiceTest {
 
         assertEquals("La revisión debe aprobar o rechazar la solicitud", exception.getMessage());
         verify(tutorPromotionRepository, never()).promoverUsuarioATutor(anyLong());
+        verify(tutorPromotionRepository, never()).asignarMateriasSolicitadas(anyLong(), anyLong());
     }
 }

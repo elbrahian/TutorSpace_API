@@ -106,7 +106,9 @@ public class SolicitudTutorService {
         solicitud.setFechaRevision(LocalDateTime.now());
 
         if (request.nuevoEstado() == EstadoSolicitudTutor.APROBADA) {
-            tutorPromotionRepository.promoverUsuarioATutor(solicitud.getSolicitante().getId());
+            Long solicitanteId = solicitud.getSolicitante().getId();
+            tutorPromotionRepository.promoverUsuarioATutor(solicitanteId);
+            tutorPromotionRepository.asignarMateriasSolicitadas(solicitanteId, solicitud.getId());
         }
 
         SolicitudTutor actualizada = solicitudTutorRepository.save(solicitud);
