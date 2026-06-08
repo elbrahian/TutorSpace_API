@@ -38,4 +38,19 @@ public interface SesionRepository extends JpaRepository<Sesion, Long> {
             @Param("fechaInicio") LocalDate fechaInicio,
             @Param("fechaFin") LocalDate fechaFin
     );
+
+    /**
+     * Proyección de actividad de sesiones para el reporte de uso por rol (MNT-11).
+     * Devuelve filas [fecha, estudianteId, tutorId] dentro del rango indicado.
+     */
+    @Query("""
+        SELECT s.fecha, s.estudiante.id, s.tutor.id
+        FROM Sesion s
+        WHERE (:fechaInicio IS NULL OR s.fecha >= :fechaInicio)
+        AND (:fechaFin IS NULL OR s.fecha <= :fechaFin)
+        """)
+    List<Object[]> findActividadSesiones(
+            @Param("fechaInicio") LocalDate fechaInicio,
+            @Param("fechaFin") LocalDate fechaFin
+    );
 }
