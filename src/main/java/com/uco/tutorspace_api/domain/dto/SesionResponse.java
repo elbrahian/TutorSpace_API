@@ -16,6 +16,7 @@ public record SesionResponse(
         LocalTime horaInicio,
         LocalTime horaFin,
         EstadoSesion estado,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        boolean calificada
 ) {
 }

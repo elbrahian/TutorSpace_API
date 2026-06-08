@@ -39,6 +39,7 @@ class SesionServiceTest {
     @Mock private DisponibilidadService disponibilidadService;
     @Mock private HistorialSesionService historialSesionService;
     @Mock private NotificacionService notificacionService;
+    @Mock private CalificacionSesionRepository calificacionSesionRepository;
 
     @InjectMocks
     private SesionService sesionService;
