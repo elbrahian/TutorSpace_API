@@ -224,6 +224,63 @@ class SolicitudTutorControllerIntegrationTest {
     }
 
     @Test
+    @DisplayName("consultar mi solicitud con token ESTUDIANTE debe retornar estado actualizado")
+    void obtenerMiSolicitud_withStudentToken_shouldReturnUpdatedStatus() throws Exception {
+        Long solicitudId = crearSolicitud();
+        solicitudTutorRepository.findById(solicitudId).ifPresent(solicitud -> {
+            solicitud.setEstado(EstadoSolicitudTutor.RECHAZADA);
+            solicitud.setObservaciones("Solicitud rechazada");
+            solicitudTutorRepository.save(solicitud);
+        });
+
+        mockMvc.perform(get("/solicitudes-tutor/mia")
+                        .header("Authorization", estudianteToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(solicitudId))
+                .andExpect(jsonPath("$.estado").value("RECHAZADA"))
+                .andExpect(jsonPath("$.observaciones").value("Solicitud rechazada"));
+    }
+
+    @Test
+    @DisplayName("consultar mi solicitud sin solicitudes debe retornar 404")
+    void obtenerMiSolicitud_withoutRequests_shouldReturn404() throws Exception {
+        mockMvc.perform(get("/solicitudes-tutor/mia")
+                        .header("Authorization", estudianteToken))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("consultar mi solicitud con token ADMIN debe retornar 403")
+    void obtenerMiSolicitud_withAdminToken_shouldReturn403() throws Exception {
+        mockMvc.perform(get("/solicitudes-tutor/mia")
+                        .header("Authorization", adminToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("consultar mi solicitud después de aprobación debe retornar APROBADA")
+    void obtenerMiSolicitud_afterApproval_shouldReturnApproved() throws Exception {
+        Long solicitudId = crearSolicitud();
+
+        mockMvc.perform(patch("/solicitudes-tutor/" + solicitudId + "/revision")
+                        .header("Authorization", adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "nuevoEstado": "APROBADA",
+                                  "observaciones": "Solicitud aprobada"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/solicitudes-tutor/mia")
+                        .header("Authorization", estudianteToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estado").value("APROBADA"))
+                .andExpect(jsonPath("$.observaciones").value("Solicitud aprobada"));
+    }
+
+    @Test
     @DisplayName("aprobar solicitud debe promover tutor y asignar materias")
     void revisarSolicitud_approved_shouldPromoteTutorAndAssignSubjects() throws Exception {
         Long solicitudId = crearSolicitud();

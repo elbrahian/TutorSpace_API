@@ -13,6 +13,8 @@ public interface SolicitudTutorRepository extends JpaRepository<SolicitudTutor, 
         JpaSpecificationExecutor<SolicitudTutor> {
     boolean existsBySolicitanteIdAndEstado(Long solicitanteId, EstadoSolicitudTutor estado);
 
+    Optional<SolicitudTutor> findFirstBySolicitanteIdOrderByFechaEnvioDesc(Long solicitanteId);
+
     @Query("""
         SELECT DISTINCT solicitud FROM SolicitudTutor solicitud
         JOIN FETCH solicitud.solicitante solicitante

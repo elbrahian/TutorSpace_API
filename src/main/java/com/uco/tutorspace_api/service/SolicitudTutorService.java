@@ -28,6 +28,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -85,6 +86,13 @@ public class SolicitudTutorService {
                 .stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<SolicitudTutorResponse> obtenerMiSolicitud(Long solicitanteId) {
+        return solicitudTutorRepository
+                .findFirstBySolicitanteIdOrderByFechaEnvioDesc(solicitanteId)
+                .map(this::toResponse);
     }
 
     @Transactional

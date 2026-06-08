@@ -48,6 +48,14 @@ public class SolicitudTutorController {
         return ResponseEntity.ok(solicitudTutorService.listarSolicitudes(estado, inicio, fin));
     }
 
+    @GetMapping("/mia")
+    @PreAuthorize("hasAnyRole('ESTUDIANTE', 'TUTOR')")
+    public ResponseEntity<SolicitudTutorResponse> obtenerMiSolicitud(Authentication auth) {
+        return ResponseEntity.of(
+                solicitudTutorService.obtenerMiSolicitud(getUserId(auth))
+        );
+    }
+
     @PatchMapping("/{id}/revision")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SolicitudTutorResponse> revisarSolicitud(

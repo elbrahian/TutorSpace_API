@@ -254,6 +254,30 @@ class SolicitudTutorServiceTest {
     }
 
     @Test
+    @DisplayName("obtenerMiSolicitud debe retornar la solicitud más reciente")
+    void obtenerMiSolicitud_shouldReturnLatestRequest() {
+        when(solicitudTutorRepository.findFirstBySolicitanteIdOrderByFechaEnvioDesc(1L))
+                .thenReturn(Optional.of(solicitud));
+
+        Optional<SolicitudTutorResponse> response = solicitudTutorService.obtenerMiSolicitud(1L);
+
+        assertTrue(response.isPresent());
+        assertEquals(100L, response.get().id());
+        assertEquals(EstadoSolicitudTutor.PENDIENTE, response.get().estado());
+    }
+
+    @Test
+    @DisplayName("obtenerMiSolicitud sin solicitudes debe retornar vacío")
+    void obtenerMiSolicitud_withoutRequests_shouldReturnEmpty() {
+        when(solicitudTutorRepository.findFirstBySolicitanteIdOrderByFechaEnvioDesc(1L))
+                .thenReturn(Optional.empty());
+
+        Optional<SolicitudTutorResponse> response = solicitudTutorService.obtenerMiSolicitud(1L);
+
+        assertTrue(response.isEmpty());
+    }
+
+    @Test
     @DisplayName("revisarSolicitud aprobada debe promover usuario a tutor")
     void revisarSolicitud_approved_shouldPromoteUser() {
         RevisarSolicitudTutorRequest request = new RevisarSolicitudTutorRequest(
