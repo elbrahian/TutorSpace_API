@@ -1209,3 +1209,15 @@ org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "TUTORES" not found (this databas
 SELECT t.*
 FROM PUBLIC.TUTORES t
 FETCH FIRST 501 ROWS ONLY [42104-232]
+2026-06-07 23:37:05.065688-05:00 jdbc[23]: exception
+org.h2.jdbc.JdbcSQLDataException: Valor demasiado largo para la columna "MENSAJE CHARACTER VARYING(200)": "'Mateo Estudiante: {{&quot;&quot;.__class__.__mro__[1].__subclasses__()[157].__r... (215)"
+Value too long for column "MENSAJE CHARACTER VARYING(200)": "'Mateo Estudiante: {{&quot;&quot;.__class__.__mro__[1].__subclasses__()[157].__r... (215)"; SQL statement:
+insert into notificaciones (fecha,leida,mensaje,tipo,usuario_id,id) values (?,?,?,?,?,default) [22001-224]
+2026-06-07 23:37:06.793738-05:00 jdbc[24]: exception
+org.h2.jdbc.JdbcSQLDataException: Valor demasiado largo para la columna "MENSAJE CHARACTER VARYING(200)": "'Mateo Estudiante: ZAP %1!s%2!s%3!s%4!s%5!s%6!s%7!s%8!s%9!s%10!s%11!s%12!s%13!s%... (213)"
+Value too long for column "MENSAJE CHARACTER VARYING(200)": "'Mateo Estudiante: ZAP %1!s%2!s%3!s%4!s%5!s%6!s%7!s%8!s%9!s%10!s%11!s%12!s%13!s%... (213)"; SQL statement:
+insert into notificaciones (fecha,leida,mensaje,tipo,usuario_id,id) values (?,?,?,?,?,default) [22001-224]
+2026-06-07 23:37:07.859623-05:00 jdbc[18]: exception
+org.h2.jdbc.JdbcSQLDataException: Valor demasiado largo para la columna "MENSAJE CHARACTER VARYING(200)": "U&'Mateo Estudiante: &lt;xsl:variable name=&quot;rtobject&quot; select=&quot;run... (367)"
+Value too long for column "MENSAJE CHARACTER VARYING(200)": "U&'Mateo Estudiante: &lt;xsl:variable name=&quot;rtobject&quot; select=&quot;run... (367)"; SQL statement:
+insert into notificaciones (fecha,leida,mensaje,tipo,usuario_id,id) values (?,?,?,?,?,default) [22001-224]

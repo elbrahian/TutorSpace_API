@@ -8,7 +8,8 @@ import jakarta.validation.constraints.Size;
 public record RegisterRequest(
         @NotBlank(message = "El nombre es requerido")
         @Size(min = 2, max = 100, message = "El nombre debe tener entre 2 y 100 caracteres")
-        @Pattern(regexp = "^[a-zA-Z ]{2,100}$", message = "El nombre solo puede contener letras y espacios")
+        // Permitir letras Unicode (incluye acentos) y espacios
+        @Pattern(regexp = "^[\\p{L} ]{2,100}$", message = "El nombre solo puede contener letras y espacios")
         String nombre,
         
         @NotBlank(message = "El email es requerido")
