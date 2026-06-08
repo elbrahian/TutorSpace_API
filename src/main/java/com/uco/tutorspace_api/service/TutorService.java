@@ -72,7 +72,7 @@ public class TutorService {
                 .anyMatch(m -> m.getId().equals(materiaId));
 
         if (!asignada) {
-            throw new RuntimeException("Este tutor no tiene asignada esta materia");
+            throw new RuntimeException("Este tutor no tiene asignada esta materia" + materiaId);
         }
 
         tutor.getMaterias().removeIf(m -> m.getId().equals(materiaId));

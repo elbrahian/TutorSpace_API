@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Size;
 public record CrearTutorRequest(
         @NotBlank(message = "El nombre es requerido")
         @Size(min = 2, max = 100, message = "El nombre debe tener entre 2 y 100 caracteres")
-        @Pattern(regexp = "^[a-zA-Z ]{2,100}$", message = "El nombre solo puede contener letras y espacios")
+        @Pattern(regexp = "^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ ]{2,100}$", message = "El nombre solo puede contener letras y espacios")
         String nombre,
         
         @NotBlank(message = "El email es requerido")

@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
-class AdminControllerIntegrationTest {
+class   AdminControllerIntegrationTest {
 
     @Autowired
     private AuthService authService;
@@ -146,7 +146,7 @@ class AdminControllerIntegrationTest {
                 "nombre": "Nuevo Tutor",
                 "email": "nuevo.tutor@uco.net.co",
                 "password": "password123",
-                "jornadaGeneral": "MAÑANA"
+                "jornadaGeneral": "MANANA"
             }
             """;
 
