@@ -153,9 +153,12 @@ colores y comportamiento:
 
 ## 8. Verificación realizada
 
-- **Backend:** `mvnw compile` ✅ · `mvnw test` → **128 tests, 0 fallos, 0 errores** ✅
-  (incluye 3 pruebas de integración del endpoint `GET /admin/reportes/uso`: con fechas,
-  sin fechas y control de acceso por rol).
+- **Backend:** `mvnw compile` ✅ · `mvnw test` → **131 tests, 0 fallos, 0 errores** ✅
+  - 3 pruebas de integración del endpoint `GET /admin/reportes/uso` (con fechas, sin fechas
+    y control de acceso por rol).
+  - 3 pruebas funcionales de `ReporteUsoService` que insertan sesiones y mensajes de los
+    3 roles en semanas conocidas y verifican totales, desglose por rol, actividad semanal
+    y filtrado por rango de fechas (incluye rango vacío → métricas en cero, sin error).
 - **Frontend:** `tsc -b && vite build` ✅ · `eslint` de los archivos del cambio ✅
 - **PDF:** se exporta con la misma utilidad probada por los reportes existentes.
 
