@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChatControler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TutorSpace_API</a> &gt; <a href="index.source.html" class="el_package">com.uco.tutorspace_api.controllers</a> &gt; <span class="el_source">ChatControler.java</span></div><h1>ChatControler.java</h1><pre class="source lang-java linenums">package com.uco.tutorspace_api.controllers;
+
+import com.uco.tutorspace_api.config.CustomUserDetails;
+import com.uco.tutorspace_api.domain.dto.ChatResponse;
+import com.uco.tutorspace_api.domain.dto.EnviarMensajeRequest;
+import com.uco.tutorspace_api.domain.dto.IniciarChatRequest;
+import com.uco.tutorspace_api.domain.dto.MensajeResponse;
+import com.uco.tutorspace_api.service.ChatService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping(&quot;/chat&quot;)
+@RequiredArgsConstructor
+public class ChatControler {
+    private final ChatService chatService;
+
+    private Long getUserId(Authentication auth) {
+<span class="nc" id="L29">        return ((CustomUserDetails) auth.getPrincipal()).getId();</span>
+    }
+
+    // Iniciar chat — solo ESTUDIANTE
+    @PostMapping(&quot;/iniciar&quot;)
+    @PreAuthorize(&quot;hasRole('ESTUDIANTE')&quot;)
+    public ResponseEntity&lt;ChatResponse&gt; iniciar(
+            @Valid @RequestBody IniciarChatRequest request,
+            Authentication auth) {
+<span class="nc" id="L38">        return ResponseEntity.status(HttpStatus.CREATED)</span>
+<span class="nc" id="L39">                .body(chatService.iniciarChat(getUserId(auth), request));</span>
+    }
+
+    // Listar chats del usuario autenticado
+    @GetMapping
+    public ResponseEntity&lt;List&lt;ChatResponse&gt;&gt; listar(Authentication auth) {
+<span class="nc" id="L45">        return ResponseEntity.ok(chatService.obtenerChatsPorUsuario(getUserId(auth)));</span>
+    }
+
+    // Historial de mensajes paginado
+    @GetMapping(&quot;/{chatId}/mensajes&quot;)
+    public ResponseEntity&lt;Page&lt;MensajeResponse&gt;&gt; historial(
+            @PathVariable Long chatId,
+            @RequestParam(defaultValue = &quot;0&quot;) int page,
+            @RequestParam(defaultValue = &quot;20&quot;) int size,
+            Authentication auth) {
+
+<span class="nc" id="L56">        Pageable pageable = PageRequest.of(page, size);</span>
+<span class="nc" id="L57">        return ResponseEntity.ok(</span>
+<span class="nc" id="L58">                chatService.obtenerHistorial(chatId, getUserId(auth), pageable)</span>
+        );
+    }
+
+    // Enviar mensaje vía REST (alternativa al WebSocket)
+    @PostMapping(&quot;/{chatId}/mensajes&quot;)
+    public ResponseEntity&lt;MensajeResponse&gt; enviar(
+            @PathVariable Long chatId,
+            @Valid @RequestBody EnviarMensajeRequest request,
+            Authentication auth) {
+<span class="nc" id="L68">        return ResponseEntity.status(HttpStatus.CREATED)</span>
+<span class="nc" id="L69">                .body(chatService.enviarMensaje(chatId, getUserId(auth), request));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

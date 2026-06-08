@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TutorService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TutorSpace_API</a> &gt; <a href="index.source.html" class="el_package">com.uco.tutorspace_api.service</a> &gt; <span class="el_source">TutorService.java</span></div><h1>TutorService.java</h1><pre class="source lang-java linenums">package com.uco.tutorspace_api.service;
+
+import com.uco.tutorspace_api.domain.Materia;
+import com.uco.tutorspace_api.domain.Tutor;
+import com.uco.tutorspace_api.domain.dto.AsignarMateriaRequest;
+import com.uco.tutorspace_api.domain.dto.CrearTutorRequest;
+import com.uco.tutorspace_api.domain.dto.MateriaResponse;
+import com.uco.tutorspace_api.domain.dto.TutorResponse;
+import com.uco.tutorspace_api.domain.enums.EstadoUsuario;
+import com.uco.tutorspace_api.domain.enums.RolUsuario;
+import com.uco.tutorspace_api.repositories.MateriaRepository;
+import com.uco.tutorspace_api.repositories.TutorRepository;
+import com.uco.tutorspace_api.repositories.UsuarioRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.NoSuchElementException;
+
+@Service
+@RequiredArgsConstructor
+public class TutorService {
+    private final UsuarioRepository usuarioRepository;
+    private final TutorRepository tutorRepository;
+    private final MateriaRepository materiaRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    public TutorResponse registrarTutor(CrearTutorRequest request) {
+<span class="nc bnc" id="L30" title="All 2 branches missed.">        if (usuarioRepository.existsByEmail(request.email())) {</span>
+<span class="nc" id="L31">            throw new IllegalStateException(&quot;El correo ya está registrado&quot;);</span>
+        }
+
+<span class="nc" id="L34">        Tutor tutor = new Tutor();</span>
+<span class="nc" id="L35">        tutor.setNombre(request.nombre());</span>
+<span class="nc" id="L36">        tutor.setEmail(request.email());</span>
+<span class="nc" id="L37">        tutor.setPassword(passwordEncoder.encode(request.password()));</span>
+<span class="nc" id="L38">        tutor.setRol(RolUsuario.TUTOR);</span>
+<span class="nc" id="L39">        tutor.setEstado(EstadoUsuario.ACTIVO);</span>
+<span class="nc" id="L40">        tutor.setJornadaGeneral(request.jornadaGeneral());</span>
+
+<span class="nc" id="L42">        Tutor guardado = tutorRepository.save(tutor);</span>
+<span class="nc" id="L43">        return toResponse(guardado);</span>
+    }
+
+    public TutorResponse asignarMateria(Long tutorId, AsignarMateriaRequest request) {
+<span class="nc" id="L47">        Tutor tutor = getTutorOrThrow(tutorId);</span>
+
+<span class="nc" id="L49">        Materia materia = materiaRepository.findById(request.materiaId())</span>
+<span class="nc" id="L50">                .orElseThrow(() -&gt; new NoSuchElementException(&quot;Materia no encontrada&quot;));</span>
+
+<span class="nc" id="L52">        boolean yaAsignada = tutor.getMaterias().stream()</span>
+<span class="nc" id="L53">                .anyMatch(m -&gt; m.getId().equals(request.materiaId()));</span>
+
+<span class="nc bnc" id="L55" title="All 2 branches missed.">        if (yaAsignada) {</span>
+<span class="nc" id="L56">            throw new IllegalStateException(&quot;La materia ya está asignada a este tutor&quot;);</span>
+        }
+
+<span class="nc" id="L59">        tutor.getMaterias().add(materia);</span>
+<span class="nc" id="L60">        return toResponse(tutorRepository.save(tutor));</span>
+    }
+
+    public TutorResponse actualizarJornada(Long tutorId, String nuevaJornada) {
+<span class="nc" id="L64">        Tutor tutor = getTutorOrThrow(tutorId);</span>
+<span class="nc" id="L65">        tutor.setJornadaGeneral(nuevaJornada);</span>
+<span class="nc" id="L66">        return toResponse(tutorRepository.save(tutor));</span>
+    }
+
+    public TutorResponse retirarMateria(Long tutorId, Long materiaId) {
+<span class="nc" id="L70">        Tutor tutor = getTutorOrThrow(tutorId);</span>
+<span class="nc" id="L71">        tutor.getMaterias().removeIf(m -&gt; m.getId().equals(materiaId));</span>
+<span class="nc" id="L72">        return toResponse(tutorRepository.save(tutor));</span>
+    }
+
+    public TutorResponse desactivarTutor(Long tutorId) {
+<span class="nc" id="L76">        Tutor tutor = getTutorOrThrow(tutorId);</span>
+<span class="nc" id="L77">        tutor.setEstado(EstadoUsuario.INACTIVO);</span>
+<span class="nc" id="L78">        return toResponse(tutorRepository.save(tutor));</span>
+    }
+
+    public TutorResponse getTutorById(Long tutorId) {
+<span class="nc" id="L82">        return toResponse(getTutorOrThrow(tutorId));</span>
+    }
+
+    public TutorResponse activarTutor(Long tutorId) {
+<span class="nc" id="L86">        Tutor tutor = getTutorOrThrow(tutorId);</span>
+<span class="nc" id="L87">        tutor.setEstado(EstadoUsuario.ACTIVO);</span>
+<span class="nc" id="L88">        return toResponse(tutorRepository.save(tutor));</span>
+    }
+
+    public List&lt;TutorResponse&gt; listarTutores() {
+<span class="nc" id="L92">        return tutorRepository.findAll().stream().map(this::toResponse).toList();</span>
+    }
+
+    public TutorResponse toResponse(Tutor tutor) {
+<span class="nc" id="L96">        List&lt;MateriaResponse&gt; materias = tutor.getMaterias().stream()</span>
+<span class="nc" id="L97">                .map(m -&gt; new MateriaResponse(m.getId(), m.getNombre(), m.getCodigo()))</span>
+<span class="nc" id="L98">                .toList();</span>
+
+<span class="nc" id="L100">        return new TutorResponse(</span>
+<span class="nc" id="L101">                tutor.getId(),</span>
+<span class="nc" id="L102">                tutor.getNombre(),</span>
+<span class="nc" id="L103">                tutor.getEmail(),</span>
+<span class="nc" id="L104">                tutor.getJornadaGeneral(),</span>
+<span class="nc" id="L105">                tutor.getEstado(),</span>
+                materias
+        );
+    }
+
+    private Tutor getTutorOrThrow(Long id) {
+<span class="nc" id="L111">        return tutorRepository.findByIdWithMaterias(id)</span>
+<span class="nc" id="L112">                .orElseThrow(() -&gt; new NoSuchElementException(&quot;Tutor no encontrado&quot;));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

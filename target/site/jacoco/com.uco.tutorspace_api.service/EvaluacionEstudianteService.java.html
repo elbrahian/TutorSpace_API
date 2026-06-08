@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EvaluacionEstudianteService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TutorSpace_API</a> &gt; <a href="index.source.html" class="el_package">com.uco.tutorspace_api.service</a> &gt; <span class="el_source">EvaluacionEstudianteService.java</span></div><h1>EvaluacionEstudianteService.java</h1><pre class="source lang-java linenums">package com.uco.tutorspace_api.service;
+
+import com.uco.tutorspace_api.domain.EvaluacionEstudiante;
+import com.uco.tutorspace_api.domain.Sesion;
+import com.uco.tutorspace_api.domain.Tutor;
+import com.uco.tutorspace_api.domain.dto.EvaluacionEstudianteRequest;
+import com.uco.tutorspace_api.domain.dto.EvaluacionEstudianteResponse;
+import com.uco.tutorspace_api.domain.enums.EstadoSesion;
+import com.uco.tutorspace_api.repositories.EvaluacionEstudianteRepository;
+import com.uco.tutorspace_api.repositories.SesionRepository;
+import com.uco.tutorspace_api.repositories.TutorRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class EvaluacionEstudianteService {
+
+    private final EvaluacionEstudianteRepository evaluacionRepository;
+    private final SesionRepository sesionRepository;
+    private final TutorRepository tutorRepository;
+
+    /**
+     * HU-M13: Crear evaluación de estudiante
+     * RF-03: POST /sesiones/{id}/evaluacion-estudiante con rol TUTOR
+     *
+     * Validaciones:
+     * - RN-01: Solo pueden evaluarse sesiones con estado COMPLETADA
+     * - RN-02: Un tutor solo puede evaluar al estudiante una vez por sesión
+     * - RN-03: Solo el tutor participante en la sesión puede realizar la evaluación
+     * - RN-04: Las observaciones son opcionales y tienen máximo 500 caracteres
+     * - RNF-03: Las evaluaciones son inmutables una vez registradas
+     */
+    @Transactional
+    public EvaluacionEstudianteResponse evaluarEstudiante(
+            Long sesionId,
+            Long tutorId,
+            EvaluacionEstudianteRequest request) {
+
+        // Obtener la sesión
+<span class="nc" id="L44">        Sesion sesion = sesionRepository.findById(sesionId)</span>
+<span class="nc" id="L45">                .orElseThrow(() -&gt; new RuntimeException(&quot;Sesión no encontrada&quot;));</span>
+
+        // RN-01: Validar que la sesión está COMPLETADA
+<span class="nc bnc" id="L48" title="All 2 branches missed.">        if (sesion.getEstado() != EstadoSesion.COMPLETADA) {</span>
+<span class="nc" id="L49">            throw new RuntimeException(</span>
+<span class="nc" id="L50">                    &quot;Solo se pueden evaluar sesiones con estado COMPLETADA. &quot; +</span>
+<span class="nc" id="L51">                            &quot;Estado actual: &quot; + sesion.getEstado()</span>
+            );
+        }
+
+        // RN-03: Verificar que el tutor es el participante en la sesión
+<span class="nc bnc" id="L56" title="All 2 branches missed.">        if (!sesion.getTutor().getId().equals(tutorId)) {</span>
+<span class="nc" id="L57">            throw new RuntimeException(</span>
+<span class="nc" id="L58">                    &quot;Solo el tutor participante en la sesión puede evaluar al estudiante&quot;</span>
+            );
+        }
+
+        // RN-02: Verificar que no existe evaluación previa para esta sesión
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        if (evaluacionRepository.existsBySesionId(sesionId)) {</span>
+<span class="nc" id="L64">            throw new RuntimeException(</span>
+<span class="nc" id="L65">                    &quot;El estudiante ya ha sido evaluado en esta sesión. &quot; +</span>
+                            &quot;Las evaluaciones no pueden ser modificadas&quot;
+            );
+        }
+
+        // Obtener el tutor
+<span class="nc" id="L71">        Tutor tutor = tutorRepository.findById(tutorId)</span>
+<span class="nc" id="L72">                .orElseThrow(() -&gt; new RuntimeException(&quot;Tutor no encontrado&quot;));</span>
+
+        // Crear evaluación
+<span class="nc" id="L75">        EvaluacionEstudiante evaluacion = new EvaluacionEstudiante();</span>
+<span class="nc" id="L76">        evaluacion.setSesion(sesion);</span>
+<span class="nc" id="L77">        evaluacion.setTutor(tutor);</span>
+<span class="nc" id="L78">        evaluacion.setEstudiante(sesion.getEstudiante());</span>
+<span class="nc" id="L79">        evaluacion.setPuntuacion(request.puntuacion());</span>
+<span class="nc" id="L80">        evaluacion.setObservaciones(request.observaciones());</span>
+<span class="nc" id="L81">        evaluacion.setInmutable(true); // RNF-03</span>
+
+<span class="nc" id="L83">        EvaluacionEstudiante guardada = evaluacionRepository.save(evaluacion);</span>
+
+<span class="nc" id="L85">        return toResponse(guardada);</span>
+    }
+
+    /**
+     * Obtener evaluación de una sesión (solo para lectura)
+     */
+    public EvaluacionEstudianteResponse obtenerEvaluacionPorSesion(Long sesionId) {
+<span class="nc" id="L92">        return evaluacionRepository.findBySesionId(sesionId)</span>
+<span class="nc" id="L93">                .map(this::toResponse)</span>
+<span class="nc" id="L94">                .orElseThrow(() -&gt; new RuntimeException(&quot;No existe evaluación para esta sesión&quot;));</span>
+    }
+
+    /**
+     * Verificar si existe evaluación para una sesión
+     */
+    public boolean existeEvaluacion(Long sesionId) {
+<span class="nc" id="L101">        return evaluacionRepository.existsBySesionId(sesionId);</span>
+    }
+
+    /**
+     * RF-06: Obtener evaluaciones de un estudiante (para reportes del Administrador)
+     */
+    public List&lt;EvaluacionEstudianteResponse&gt; obtenerEvaluacionesPorEstudiante(Long estudianteId) {
+<span class="nc" id="L108">        return evaluacionRepository.findByEstudianteId(estudianteId)</span>
+<span class="nc" id="L109">                .stream()</span>
+<span class="nc" id="L110">                .map(this::toResponse)</span>
+<span class="nc" id="L111">                .toList();</span>
+    }
+
+    /**
+     * Obtener evaluaciones realizadas por un tutor
+     */
+    public List&lt;EvaluacionEstudianteResponse&gt; obtenerEvaluacionesPorTutor(Long tutorId) {
+<span class="nc" id="L118">        return evaluacionRepository.findByTutorId(tutorId)</span>
+<span class="nc" id="L119">                .stream()</span>
+<span class="nc" id="L120">                .map(this::toResponse)</span>
+<span class="nc" id="L121">                .toList();</span>
+    }
+
+    /**
+     * Obtener promedio de puntuación de un estudiante
+     */
+    public Double obtenerPromedioPuntuacionesEstudiante(Long estudianteId) {
+<span class="nc" id="L128">        return evaluacionRepository.obtenerPromedioPuntuacionesEstudiante(estudianteId);</span>
+    }
+
+    /**
+     * Contar evaluaciones de un estudiante
+     */
+    public long contarEvaluacionesEstudiante(Long estudianteId) {
+<span class="nc" id="L135">        return evaluacionRepository.countEvaluacionesByEstudiante(estudianteId);</span>
+    }
+
+    // ============ Métodos Privados ============
+
+    private EvaluacionEstudianteResponse toResponse(EvaluacionEstudiante evaluacion) {
+<span class="nc" id="L141">        return new EvaluacionEstudianteResponse(</span>
+<span class="nc" id="L142">                evaluacion.getId(),</span>
+<span class="nc" id="L143">                evaluacion.getSesion().getId(),</span>
+<span class="nc" id="L144">                evaluacion.getTutor().getId(),</span>
+<span class="nc" id="L145">                evaluacion.getTutor().getNombre(),</span>
+<span class="nc" id="L146">                evaluacion.getEstudiante().getId(),</span>
+<span class="nc" id="L147">                evaluacion.getEstudiante().getNombre(),</span>
+<span class="nc" id="L148">                evaluacion.getPuntuacion(),</span>
+<span class="nc" id="L149">                evaluacion.getObservaciones(),</span>
+<span class="nc" id="L150">                evaluacion.getCreatedAt()</span>
+        );
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

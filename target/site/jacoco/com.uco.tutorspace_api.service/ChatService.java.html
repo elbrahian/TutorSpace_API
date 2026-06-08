@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChatService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TutorSpace_API</a> &gt; <a href="index.source.html" class="el_package">com.uco.tutorspace_api.service</a> &gt; <span class="el_source">ChatService.java</span></div><h1>ChatService.java</h1><pre class="source lang-java linenums">package com.uco.tutorspace_api.service;
+
+import com.uco.tutorspace_api.domain.*;
+import com.uco.tutorspace_api.domain.dto.ChatResponse;
+import com.uco.tutorspace_api.domain.dto.EnviarMensajeRequest;
+import com.uco.tutorspace_api.domain.dto.IniciarChatRequest;
+import com.uco.tutorspace_api.domain.dto.MensajeResponse;
+import com.uco.tutorspace_api.domain.enums.TipoNotificacion;
+import com.uco.tutorspace_api.repositories.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.NoSuchElementException;
+
+@Service
+@RequiredArgsConstructor
+public class ChatService {
+    private final ChatRepository chatRepository;
+    private final MensajeRepository mensajeRepository;
+    private final TutorRepository tutorRepository;
+    private final EstudianteRepository estudianteRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final NotificacionService notificacionService;
+    private final SimpMessagingTemplate messagingTemplate;
+
+    public ChatResponse iniciarChat(Long estudianteId, IniciarChatRequest request) {
+<span class="nc bnc" id="L32" title="All 2 branches missed.">        if (chatRepository.existsByTutorIdAndEstudianteId(request.tutorId(), estudianteId)) {</span>
+<span class="nc" id="L33">            Chat existente = chatRepository</span>
+<span class="nc" id="L34">                    .findByTutorIdAndEstudianteId(request.tutorId(), estudianteId)</span>
+<span class="nc" id="L35">                    .get();</span>
+<span class="nc" id="L36">            return toResponse(existente);</span>
+        }
+
+<span class="nc" id="L39">        Tutor tutor = tutorRepository.findById(request.tutorId())</span>
+<span class="nc" id="L40">                .orElseThrow(() -&gt; new NoSuchElementException(&quot;Tutor no encontrado&quot;));</span>
+
+<span class="nc" id="L42">        Estudiante estudiante = estudianteRepository.findById(estudianteId)</span>
+<span class="nc" id="L43">                .orElseThrow(() -&gt; new NoSuchElementException(&quot;Estudiante no encontrado&quot;));</span>
+
+<span class="nc" id="L45">        Chat chat = new Chat();</span>
+<span class="nc" id="L46">        chat.setTutor(tutor);</span>
+<span class="nc" id="L47">        chat.setEstudiante(estudiante);</span>
+<span class="nc" id="L48">        chat.setFechaCreacion(LocalDateTime.now());</span>
+
+<span class="nc" id="L50">        Chat guardado = chatRepository.save(chat);</span>
+
+<span class="nc" id="L52">        notificacionService.enviarNotificacion(</span>
+                tutor,
+                TipoNotificacion.NUEVO_MENSAJE,
+<span class="nc" id="L55">                &quot;El estudiante &quot; + estudiante.getNombre() + &quot; inició un chat contigo&quot;</span>
+        );
+
+<span class="nc" id="L58">        return toResponse(guardado);</span>
+    }
+
+    public MensajeResponse enviarMensaje(Long chatId, Long emisorId,
+                                         EnviarMensajeRequest request) {
+<span class="nc" id="L63">        Chat chat = chatRepository.findById(chatId)</span>
+<span class="nc" id="L64">                .orElseThrow(() -&gt; new NoSuchElementException(&quot;Chat no encontrado&quot;));</span>
+
+<span class="nc" id="L66">        boolean esTutor = chat.getTutor().getId().equals(emisorId);</span>
+<span class="nc" id="L67">        boolean esEstudiante = chat.getEstudiante().getId().equals(emisorId);</span>
+
+<span class="nc bnc" id="L69" title="All 4 branches missed.">        if (!esTutor &amp;&amp; !esEstudiante) {</span>
+<span class="nc" id="L70">            throw new IllegalStateException(&quot;No tienes acceso a este chat&quot;);</span>
+        }
+
+<span class="nc" id="L73">        Usuario emisor = usuarioRepository.findById(emisorId)</span>
+<span class="nc" id="L74">                .orElseThrow(() -&gt; new NoSuchElementException(&quot;Usuario no encontrado&quot;));</span>
+
+<span class="nc" id="L76">        Mensaje mensaje = new Mensaje();</span>
+<span class="nc" id="L77">        mensaje.setChat(chat);</span>
+<span class="nc" id="L78">        mensaje.setEmisor(emisor);</span>
+<span class="nc" id="L79">        mensaje.setContenido(sanitizar(request.contenido()));</span>
+<span class="nc" id="L80">        mensaje.setFecha(LocalDateTime.now());</span>
+
+<span class="nc" id="L82">        Mensaje guardado = mensajeRepository.save(mensaje);</span>
+<span class="nc" id="L83">        MensajeResponse response = toMensajeResponse(guardado);</span>
+
+<span class="nc" id="L85">        messagingTemplate.convertAndSend(&quot;/topic/chat/&quot; + chatId, response);</span>
+
+<span class="nc bnc" id="L87" title="All 2 branches missed.">        Usuario destinatario = esTutor ? chat.getEstudiante() : chat.getTutor();</span>
+<span class="nc" id="L88">        notificacionService.enviarNotificacion(</span>
+                destinatario,
+                TipoNotificacion.NUEVO_MENSAJE,
+<span class="nc" id="L91">                emisor.getNombre() + &quot;: &quot; + request.contenido()</span>
+        );
+
+<span class="nc" id="L94">        return response;</span>
+    }
+
+    public Page&lt;MensajeResponse&gt; obtenerHistorial(Long chatId, Long usuarioId,
+                                                  Pageable pageable) {
+<span class="nc" id="L99">        Chat chat = chatRepository.findById(chatId)</span>
+<span class="nc" id="L100">                .orElseThrow(() -&gt; new NoSuchElementException(&quot;Chat no encontrado&quot;));</span>
+
+<span class="nc bnc" id="L102" title="All 2 branches missed.">        boolean tieneAcceso = chat.getTutor().getId().equals(usuarioId)</span>
+<span class="nc bnc" id="L103" title="All 2 branches missed.">                || chat.getEstudiante().getId().equals(usuarioId);</span>
+
+<span class="nc bnc" id="L105" title="All 2 branches missed.">        if (!tieneAcceso) {</span>
+<span class="nc" id="L106">            throw new IllegalStateException(&quot;No tienes acceso a este chat&quot;);</span>
+        }
+
+<span class="nc" id="L109">        return mensajeRepository.findByChatIdOrderByFechaAsc(chatId, pageable)</span>
+<span class="nc" id="L110">                .map(this::toMensajeResponse);</span>
+    }
+
+    public List&lt;ChatResponse&gt; obtenerChatsPorUsuario(Long usuarioId) {
+<span class="nc" id="L114">        return chatRepository.findAllByUsuarioId(usuarioId)</span>
+<span class="nc" id="L115">                .stream()</span>
+<span class="nc" id="L116">                .map(this::toResponse)</span>
+<span class="nc" id="L117">                .toList();</span>
+    }
+
+    public ChatResponse toResponse(Chat chat) {
+<span class="nc" id="L121">        return new ChatResponse(</span>
+<span class="nc" id="L122">                chat.getId(),</span>
+<span class="nc" id="L123">                chat.getTutor().getId(),</span>
+<span class="nc" id="L124">                chat.getTutor().getNombre(),</span>
+<span class="nc" id="L125">                chat.getEstudiante().getId(),</span>
+<span class="nc" id="L126">                chat.getEstudiante().getNombre(),</span>
+<span class="nc" id="L127">                chat.getFechaCreacion()</span>
+        );
+    }
+
+    public MensajeResponse toMensajeResponse(Mensaje m) {
+<span class="nc" id="L132">        return new MensajeResponse(</span>
+<span class="nc" id="L133">                m.getId(),</span>
+<span class="nc" id="L134">                m.getEmisor().getId(),</span>
+<span class="nc" id="L135">                m.getEmisor().getNombre(),</span>
+<span class="nc" id="L136">                m.getContenido(),</span>
+<span class="nc" id="L137">                m.getFecha()</span>
+        );
+    }
+
+    private String sanitizar(String contenido) {
+<span class="nc bnc" id="L142" title="All 2 branches missed.">        if (contenido == null) return &quot;&quot;;</span>
+<span class="nc" id="L143">        return contenido</span>
+<span class="nc" id="L144">                .replace(&quot;&lt;&quot;, &quot;&amp;lt;&quot;)</span>
+<span class="nc" id="L145">                .replace(&quot;&gt;&quot;, &quot;&amp;gt;&quot;)</span>
+<span class="nc" id="L146">                .replace(&quot;\&quot;&quot;, &quot;&amp;quot;&quot;)</span>
+<span class="nc" id="L147">                .replace(&quot;'&quot;, &quot;&amp;#x27;&quot;)</span>
+<span class="nc" id="L148">                .trim();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

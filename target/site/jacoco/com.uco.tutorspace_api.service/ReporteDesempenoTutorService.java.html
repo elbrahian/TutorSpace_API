@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReporteDesempenoTutorService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TutorSpace_API</a> &gt; <a href="index.source.html" class="el_package">com.uco.tutorspace_api.service</a> &gt; <span class="el_source">ReporteDesempenoTutorService.java</span></div><h1>ReporteDesempenoTutorService.java</h1><pre class="source lang-java linenums">package com.uco.tutorspace_api.service;
+
+import com.uco.tutorspace_api.domain.Sesion;
+import com.uco.tutorspace_api.domain.Tutor;
+import com.uco.tutorspace_api.domain.dto.ReporteDesempenoTutorResponse;
+import com.uco.tutorspace_api.domain.enums.EstadoSesion;
+import com.uco.tutorspace_api.domain.enums.EstadoUsuario;
+import com.uco.tutorspace_api.repositories.CalificacionSesionRepository;
+import com.uco.tutorspace_api.repositories.SesionRepository;
+import com.uco.tutorspace_api.repositories.TutorRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class ReporteDesempenoTutorService {
+    private final TutorRepository tutorRepository;
+    private final SesionRepository sesionRepository;
+    private final CalificacionSesionRepository calificacionSesionRepository;
+
+    public List&lt;ReporteDesempenoTutorResponse&gt; obtenerReporte(LocalDate fechaInicio, LocalDate fechaFin) {
+<span class="nc" id="L28">        List&lt;Tutor&gt; tutoresActivos = tutorRepository.findByEstadoOrderByNombreAsc(EstadoUsuario.ACTIVO);</span>
+
+<span class="nc bnc" id="L30" title="All 2 branches missed.">        if (tutoresActivos.isEmpty()) {</span>
+<span class="nc" id="L31">            return Collections.emptyList();</span>
+        }
+
+<span class="nc" id="L34">        List&lt;Long&gt; tutorIds = tutoresActivos.stream()</span>
+<span class="nc" id="L35">                .map(Tutor::getId)</span>
+<span class="nc" id="L36">                .toList();</span>
+
+<span class="nc" id="L38">        Map&lt;Long, List&lt;Sesion&gt;&gt; sesionesPorTutor = sesionRepository.findByTutorIdsAndRango(tutorIds, fechaInicio, fechaFin)</span>
+<span class="nc" id="L39">                .stream()</span>
+<span class="nc" id="L40">                .collect(Collectors.groupingBy(sesion -&gt; sesion.getTutor().getId()));</span>
+
+<span class="nc" id="L42">        return tutoresActivos.stream()</span>
+<span class="nc" id="L43">                .map(tutor -&gt; construirFila(tutor, sesionesPorTutor.getOrDefault(tutor.getId(), Collections.emptyList()), fechaInicio, fechaFin))</span>
+<span class="nc" id="L44">                .toList();</span>
+    }
+
+    private ReporteDesempenoTutorResponse construirFila(Tutor tutor, List&lt;Sesion&gt; sesiones, LocalDate fechaInicio, LocalDate fechaFin) {
+<span class="nc" id="L48">        long totalSesiones = sesiones.size();</span>
+<span class="nc" id="L49">        long sesionesCanceladas = sesiones.stream()</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">                .filter(sesion -&gt; sesion.getEstado() == EstadoSesion.CANCELADA)</span>
+<span class="nc" id="L51">                .count();</span>
+<span class="nc" id="L52">        long sesionesCompletadas = sesiones.stream()</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">                .filter(sesion -&gt; sesion.getEstado() == EstadoSesion.COMPLETADA)</span>
+<span class="nc" id="L54">                .count();</span>
+<span class="nc bnc" id="L55" title="All 2 branches missed.">        double porcentajeCancelacion = totalSesiones == 0</span>
+<span class="nc" id="L56">                ? 0</span>
+<span class="nc" id="L57">                : (sesionesCanceladas * 100.0) / totalSesiones;</span>
+<span class="nc" id="L58">        Double promedioCalificacion = calificacionSesionRepository.promedioCalificacionPorTutor(</span>
+<span class="nc" id="L59">                tutor.getId(),</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">                fechaInicio != null ? fechaInicio : LocalDate.of(1, 1, 1),</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">                fechaFin != null ? fechaFin : LocalDate.of(9999, 12, 31)</span>
+        );
+
+<span class="nc" id="L64">        return new ReporteDesempenoTutorResponse(</span>
+<span class="nc" id="L65">                tutor.getId(),</span>
+<span class="nc" id="L66">                tutor.getNombre(),</span>
+<span class="nc" id="L67">                totalSesiones,</span>
+<span class="nc" id="L68">                sesionesCompletadas,</span>
+<span class="nc" id="L69">                sesionesCanceladas,</span>
+<span class="nc" id="L70">                redondear(porcentajeCancelacion),</span>
+<span class="nc" id="L71">                redondear(promedioCalificacion)</span>
+        );
+    }
+
+    private double redondear(double valor) {
+<span class="nc" id="L76">        return Math.round(valor * 100.0) / 100.0;</span>
+    }
+
+    private Double redondear(Double valor) {
+<span class="nc bnc" id="L80" title="All 2 branches missed.">        return valor == null ? null : redondear(valor.doubleValue());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

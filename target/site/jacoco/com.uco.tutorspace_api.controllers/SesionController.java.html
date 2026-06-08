@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SesionController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TutorSpace_API</a> &gt; <a href="index.source.html" class="el_package">com.uco.tutorspace_api.controllers</a> &gt; <span class="el_source">SesionController.java</span></div><h1>SesionController.java</h1><pre class="source lang-java linenums">package com.uco.tutorspace_api.controllers;
+
+import com.uco.tutorspace_api.config.CustomUserDetails;
+import com.uco.tutorspace_api.domain.dto.*;
+import com.uco.tutorspace_api.service.EvaluacionEstudianteService;
+import com.uco.tutorspace_api.service.SesionService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+import java.util.List;
+
+@RestController
+@RequestMapping(&quot;/sesiones&quot;)
+@RequiredArgsConstructor
+@Tag(name = &quot;Sesiones&quot;, description = &quot;Gestión de sesiones de tutoría&quot;)
+public class SesionController {
+    private final SesionService sesionService;
+    private final EvaluacionEstudianteService evaluacionEstudianteService;
+
+
+    private Long getUserId(Authentication auth) {
+<span class="nc" id="L30">        return ((CustomUserDetails) auth.getPrincipal()).getId();</span>
+    }
+
+    @Operation(summary = &quot;Crear sesión&quot;, description = &quot;El tutor crea una sesión. Requiere chat previo con el estudiante.&quot;)
+    @PostMapping
+    @PreAuthorize(&quot;hasRole('TUTOR')&quot;)
+    public ResponseEntity&lt;SesionResponse&gt; crear(
+            @Valid @RequestBody CrearSesionRequest request,
+            Authentication auth) {
+<span class="nc" id="L39">        return ResponseEntity.status(HttpStatus.CREATED)</span>
+<span class="nc" id="L40">                .body(sesionService.crearSesion(getUserId(auth), request));</span>
+    }
+
+    @Operation(summary = &quot;Cambiar estado de sesión&quot;, description = &quot;El tutor cambia el estado: PENDIENTE → APROBADA o CANCELADA; APROBADA → COMPLETADA o CANCELADA&quot;)
+    @PatchMapping(&quot;/{id}/estado&quot;)
+    @PreAuthorize(&quot;hasRole('TUTOR')&quot;)
+    public ResponseEntity&lt;SesionResponse&gt; cambiarEstado(
+            @PathVariable Long id,
+            @Valid @RequestBody CambiarEstadoSesionRequest request,
+            Authentication auth) {
+<span class="nc" id="L50">        return ResponseEntity.ok(sesionService.cambiarEstado(id, getUserId(auth), request));</span>
+    }
+
+    @GetMapping(&quot;/tutor&quot;)
+    @PreAuthorize(&quot;hasRole('TUTOR')&quot;)
+    public ResponseEntity&lt;List&lt;SesionResponse&gt;&gt; porTutor(Authentication auth) {
+<span class="nc" id="L56">        return ResponseEntity.ok(sesionService.obtenerPorTutor(getUserId(auth)));</span>
+    }
+
+    @GetMapping(&quot;/estudiante&quot;)
+    @PreAuthorize(&quot;hasRole('ESTUDIANTE')&quot;)
+    public ResponseEntity&lt;List&lt;SesionResponse&gt;&gt; porEstudiante(Authentication auth) {
+<span class="nc" id="L62">        return ResponseEntity.ok(sesionService.obtenerPorEstudiante(getUserId(auth)));</span>
+    }
+
+    @GetMapping(&quot;/estudiante/rango&quot;)
+    @PreAuthorize(&quot;hasRole('ESTUDIANTE')&quot;)
+    public ResponseEntity&lt;List&lt;SesionResponse&gt;&gt; porRango(
+            @RequestParam LocalDate inicio,
+            @RequestParam LocalDate fin,
+            Authentication auth) {
+<span class="nc" id="L71">        return ResponseEntity.ok(</span>
+<span class="nc" id="L72">                sesionService.obtenerPorEstudianteYFecha(getUserId(auth), inicio, fin)</span>
+        );
+    }
+
+    @PostMapping(&quot;/{id}/evaluacion-estudiante&quot;)
+    @PreAuthorize(&quot;hasRole('TUTOR')&quot;)
+    @Operation(summary = &quot;Evaluar estudiante&quot;,
+            description = &quot;El tutor evalúa el desempeño del estudiante tras una sesión completada (RF-03, HU-M13)&quot;)
+    public ResponseEntity&lt;EvaluacionEstudianteResponse&gt; evaluarEstudiante(
+            @PathVariable Long id,
+            @Valid @RequestBody EvaluacionEstudianteRequest request,
+            Authentication auth) {
+<span class="nc" id="L84">        return ResponseEntity.status(HttpStatus.CREATED)</span>
+<span class="nc" id="L85">                .body(evaluacionEstudianteService.evaluarEstudiante(id, getUserId(auth), request));</span>
+    }
+
+    @GetMapping(&quot;/{id}/evaluacion-estudiante&quot;)
+    @Operation(summary = &quot;Obtener evaluación de sesión&quot;,
+            description = &quot;Obtiene la evaluación registrada para una sesión (RF-06)&quot;)
+    public ResponseEntity&lt;EvaluacionEstudianteResponse&gt; obtenerEvaluacion(
+            @PathVariable Long id) {
+<span class="nc" id="L93">        return ResponseEntity.ok(evaluacionEstudianteService.obtenerEvaluacionPorSesion(id));</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

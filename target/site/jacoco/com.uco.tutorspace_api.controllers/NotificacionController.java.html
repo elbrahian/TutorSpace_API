@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NotificacionController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TutorSpace_API</a> &gt; <a href="index.source.html" class="el_package">com.uco.tutorspace_api.controllers</a> &gt; <span class="el_source">NotificacionController.java</span></div><h1>NotificacionController.java</h1><pre class="source lang-java linenums">package com.uco.tutorspace_api.controllers;
+
+import com.uco.tutorspace_api.config.CustomUserDetails;
+import com.uco.tutorspace_api.domain.Notificacion;
+import com.uco.tutorspace_api.service.NotificacionService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping(&quot;/notificaciones&quot;)
+@RequiredArgsConstructor
+@Tag(name = &quot;Notificaciones&quot;, description = &quot;Gestión de notificaciones del usuario&quot;)
+public class NotificacionController {
+    private final NotificacionService notificacionService;
+
+    private Long getUserId(Authentication auth) {
+<span class="nc" id="L23">        return ((CustomUserDetails) auth.getPrincipal()).getId();</span>
+    }
+
+    @Operation(summary = &quot;Obtener todas&quot;, description = &quot;Obtiene todas las notificaciones del usuario&quot;)
+    @GetMapping
+    public ResponseEntity&lt;List&lt;Notificacion&gt;&gt; todas(Authentication auth) {
+<span class="nc" id="L29">        return ResponseEntity.ok(notificacionService.obtenerTodas(getUserId(auth)));</span>
+    }
+
+    @Operation(summary = &quot;Obtener no leídas&quot;, description = &quot;Obtiene las notificaciones no leídas del usuario&quot;)
+    @GetMapping(&quot;/no-leidas&quot;)
+    public ResponseEntity&lt;List&lt;Notificacion&gt;&gt; noLeidas(Authentication auth) {
+<span class="nc" id="L35">        return ResponseEntity.ok(notificacionService.obtenerNoLeidas(getUserId(auth)));</span>
+    }
+
+    @Operation(summary = &quot;Marcar como leída&quot;, description = &quot;Marca una notificación como leída&quot;)
+    @PatchMapping(&quot;/{id}/leer&quot;)
+    public ResponseEntity&lt;Void&gt; marcarLeida(@PathVariable Long id, Authentication auth) {
+<span class="nc" id="L41">        notificacionService.marcarLeida(id, getUserId(auth));</span>
+<span class="nc" id="L42">        return ResponseEntity.noContent().build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HistorialSesionSpecification.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TutorSpace_API</a> &gt; <a href="index.source.html" class="el_package">com.uco.tutorspace_api.repositories</a> &gt; <span class="el_source">HistorialSesionSpecification.java</span></div><h1>HistorialSesionSpecification.java</h1><pre class="source lang-java linenums">package com.uco.tutorspace_api.repositories;
+
+import com.uco.tutorspace_api.domain.HistorialSesion;
+import com.uco.tutorspace_api.domain.enums.EstadoSesion;
+import org.springframework.data.jpa.domain.Specification;
+
+import java.time.LocalDateTime;
+
+/**
+ * Clase que define especificaciones JPA para filtrar registros
+ * de HistorialSesion de forma dinamica y componible.
+ */
+<span class="nc" id="L13">public class HistorialSesionSpecification {</span>
+
+    /**
+     * Filtra registros por el estado nuevo al que cambio la sesion.
+     */
+    public static Specification&lt;HistorialSesion&gt; estadoNuevo(
+            EstadoSesion estadoNuevo
+    ) {
+<span class="nc" id="L21">        return (root, query, cb) -&gt; {</span>
+
+            // Si no se proporciona valor, se omite este filtro
+<span class="nc bnc" id="L24" title="All 2 branches missed.">            if (estadoNuevo == null) {</span>
+<span class="nc" id="L25">                return null;</span>
+            }
+
+            // Predicado: WHERE estado_nuevo = :estadoNuevo
+<span class="nc" id="L29">            return cb.equal(</span>
+<span class="nc" id="L30">                    root.get(&quot;estadoNuevo&quot;),</span>
+                    estadoNuevo
+            );
+        };
+    }
+
+    /**
+     * Filtra registros por el estado anterior que tenía la sesión antes del cambio.
+     */
+    public static Specification&lt;HistorialSesion&gt; estadoAnterior(
+            EstadoSesion estadoAnterior
+    ) {
+<span class="nc" id="L42">        return (root, query, cb) -&gt; {</span>
+
+            // Si no se proporciona valor, se omite este filtro
+<span class="nc bnc" id="L45" title="All 2 branches missed.">            if (estadoAnterior == null) {</span>
+<span class="nc" id="L46">                return null;</span>
+            }
+
+            // Predicado: WHERE estado_anterior = :estadoAnterior
+<span class="nc" id="L50">            return cb.equal(</span>
+<span class="nc" id="L51">                    root.get(&quot;estadoAnterior&quot;),</span>
+                    estadoAnterior
+            );
+        };
+    }
+
+    /**
+     * Filtra registros por el nombre del tutor asociado a la sesión.
+     */
+    public static Specification&lt;HistorialSesion&gt; tutor(
+            String tutor
+    ) {
+<span class="nc" id="L63">        return (root, query, cb) -&gt; {</span>
+
+            // Si no se proporciona valor o está vacío, se omite este filtro
+<span class="nc bnc" id="L66" title="All 4 branches missed.">            if (tutor == null || tutor.isBlank()) {</span>
+<span class="nc" id="L67">                return null;</span>
+            }
+
+            // Predicado: WHERE LOWER(sesion.tutor.nombre) LIKE '%tutor%'
+<span class="nc" id="L71">            return cb.like(</span>
+<span class="nc" id="L72">                    cb.lower(</span>
+<span class="nc" id="L73">                            root.get(&quot;sesion&quot;)</span>
+<span class="nc" id="L74">                                    .get(&quot;tutor&quot;)</span>
+<span class="nc" id="L75">                                    .get(&quot;nombre&quot;)</span>
+                    ),
+<span class="nc" id="L77">                    &quot;%&quot; + tutor.toLowerCase() + &quot;%&quot;</span>
+            );
+        };
+    }
+
+    /**
+     * Filtra registros por el nombre del estudiante asociado a la sesión.
+     */
+    public static Specification&lt;HistorialSesion&gt; estudiante(
+            String estudiante
+    ) {
+<span class="nc" id="L88">        return (root, query, cb) -&gt; {</span>
+
+            // Si no se proporciona valor o está vacío, se omite este filtro
+<span class="nc bnc" id="L91" title="All 4 branches missed.">            if (estudiante == null || estudiante.isBlank()) {</span>
+<span class="nc" id="L92">                return null;</span>
+            }
+
+            // Predicado: WHERE LOWER(sesion.estudiante.nombre) LIKE '%estudiante%'
+<span class="nc" id="L96">            return cb.like(</span>
+<span class="nc" id="L97">                    cb.lower(</span>
+<span class="nc" id="L98">                            root.get(&quot;sesion&quot;)</span>
+<span class="nc" id="L99">                                    .get(&quot;estudiante&quot;)</span>
+<span class="nc" id="L100">                                    .get(&quot;nombre&quot;)</span>
+                    ),
+<span class="nc" id="L102">                    &quot;%&quot; + estudiante.toLowerCase() + &quot;%&quot;</span>
+            );
+        };
+    }
+
+    /**
+     * Filtra registros cuya fecha de cambio se encuentre dentro de un rango.
+     */
+    public static Specification&lt;HistorialSesion&gt; fechaEntre(
+            LocalDateTime inicio,
+            LocalDateTime fin
+    ) {
+<span class="nc" id="L114">        return (root, query, cb) -&gt; {</span>
+
+            // Si no se proporcionan fechas, se omite este filtro
+<span class="nc bnc" id="L117" title="All 4 branches missed.">            if (inicio == null &amp;&amp; fin == null) {</span>
+<span class="nc" id="L118">                return null;</span>
+            }
+
+            // Rango completo: WHERE fecha_cambio BETWEEN :inicio AND :fin
+<span class="nc bnc" id="L122" title="All 4 branches missed.">            if (inicio != null &amp;&amp; fin != null) {</span>
+<span class="nc" id="L123">                return cb.between(</span>
+<span class="nc" id="L124">                        root.get(&quot;fechaCambio&quot;),</span>
+                        inicio,
+                        fin
+                );
+            }
+
+            // Solo límite inferior: WHERE fecha_cambio &gt;= :inicio
+<span class="nc bnc" id="L131" title="All 2 branches missed.">            if (inicio != null) {</span>
+<span class="nc" id="L132">                return cb.greaterThanOrEqualTo(</span>
+<span class="nc" id="L133">                        root.get(&quot;fechaCambio&quot;),</span>
+                        inicio
+                );
+            }
+
+            // Solo límite superior: WHERE fecha_cambio &lt;= :fin
+<span class="nc" id="L139">            return cb.lessThanOrEqualTo(</span>
+<span class="nc" id="L140">                    root.get(&quot;fechaCambio&quot;),</span>
+                    fin
+            );
+        };
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

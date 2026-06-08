@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CalificacionSesionController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TutorSpace_API</a> &gt; <a href="index.source.html" class="el_package">com.uco.tutorspace_api.controllers</a> &gt; <span class="el_source">CalificacionSesionController.java</span></div><h1>CalificacionSesionController.java</h1><pre class="source lang-java linenums">package com.uco.tutorspace_api.controllers;
+
+import com.uco.tutorspace_api.config.CustomUserDetails;
+import com.uco.tutorspace_api.domain.dto.CalificacionSesionRequest;
+import com.uco.tutorspace_api.domain.dto.CalificacionSesionResponse;
+import com.uco.tutorspace_api.service.CalificacionSesionService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping(&quot;/sesiones&quot;)
+@RequiredArgsConstructor
+@PreAuthorize(&quot;hasRole('ESTUDIANTE')&quot;)
+@Tag(name = &quot;Evaluación de tutorías&quot;, description = &quot;Evaluación de sesiones por el estudiante (MNT-12)&quot;)
+public class CalificacionSesionController {
+
+    private final CalificacionSesionService calificacionSesionService;
+
+    private Long getEstudianteId(Authentication auth) {
+<span class="nc" id="L27">        return ((CustomUserDetails) auth.getPrincipal()).getId();</span>
+    }
+
+    @Operation(summary = &quot;Evaluar sesión&quot;,
+            description = &quot;El estudiante participante evalúa una sesión COMPLETADA: &quot; +
+                    &quot;calificación entera 1-5 y comentario opcional (máx. 500). &quot; +
+                    &quot;Solo se permite una evaluación por sesión/estudiante (409 si ya existe).&quot;)
+    @PostMapping(&quot;/{id}/evaluacion&quot;)
+    public ResponseEntity&lt;CalificacionSesionResponse&gt; evaluar(
+            @PathVariable Long id,
+            @Valid @RequestBody CalificacionSesionRequest request,
+            Authentication auth) {
+
+<span class="nc" id="L40">        return ResponseEntity.status(HttpStatus.CREATED)</span>
+<span class="nc" id="L41">                .body(calificacionSesionService.calificarSesion(getEstudianteId(auth), id, request));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

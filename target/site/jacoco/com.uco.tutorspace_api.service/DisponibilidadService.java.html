@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DisponibilidadService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TutorSpace_API</a> &gt; <a href="index.source.html" class="el_package">com.uco.tutorspace_api.service</a> &gt; <span class="el_source">DisponibilidadService.java</span></div><h1>DisponibilidadService.java</h1><pre class="source lang-java linenums">package com.uco.tutorspace_api.service;
+
+import com.uco.tutorspace_api.utils.HorarioValidator;
+import com.uco.tutorspace_api.domain.Disponibilidad;
+import com.uco.tutorspace_api.domain.Tutor;
+import com.uco.tutorspace_api.domain.dto.CrearDisponibilidadRequest;
+import com.uco.tutorspace_api.domain.dto.DisponibilidadResponse;
+import com.uco.tutorspace_api.domain.enums.EstadoDisponibilidad;
+import com.uco.tutorspace_api.repositories.DisponibilidadRepository;
+import com.uco.tutorspace_api.repositories.TutorRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.NoSuchElementException;
+
+@Service
+@RequiredArgsConstructor
+public class DisponibilidadService {
+
+    private static final String DISPONIBILIDAD_NO_ENCONTRADA = &quot;Disponibilidad no encontrada&quot;;
+
+    private final DisponibilidadRepository disponibilidadRepository;
+    private final TutorRepository tutorRepository;
+    private final HorarioValidator horarioValidator;
+
+    public DisponibilidadResponse crearDisponibilidad(Long tutorId,
+                                                      CrearDisponibilidadRequest request) {
+<span class="nc bnc" id="L29" title="All 2 branches missed.">        if (!horarioValidator.esRangoValido(request.horaInicio(), request.horaFin())) {</span>
+<span class="nc" id="L30">            throw new IllegalArgumentException(&quot;La hora de inicio debe ser anterior a la hora de fin&quot;);</span>
+        }
+
+<span class="nc" id="L33">        List&lt;Disponibilidad&gt; solapadas = disponibilidadRepository.findSolapadas(</span>
+                tutorId,
+<span class="nc" id="L35">                request.dia(),</span>
+<span class="nc" id="L36">                request.horaInicio(),</span>
+<span class="nc" id="L37">                request.horaFin()</span>
+        );
+
+<span class="nc bnc" id="L40" title="All 2 branches missed.">        if (!solapadas.isEmpty()) {</span>
+<span class="nc" id="L41">            throw new IllegalStateException(&quot;La franja se solapa con una disponibilidad existente&quot;);</span>
+        }
+
+<span class="nc" id="L44">        Tutor tutor = tutorRepository.findById(tutorId)</span>
+<span class="nc" id="L45">                .orElseThrow(() -&gt; new NoSuchElementException(&quot;Tutor no encontrado&quot;));</span>
+
+<span class="nc" id="L47">        Disponibilidad disponibilidad = new Disponibilidad();</span>
+<span class="nc" id="L48">        disponibilidad.setTutor(tutor);</span>
+<span class="nc" id="L49">        disponibilidad.setDia(request.dia().toUpperCase());</span>
+<span class="nc" id="L50">        disponibilidad.setHoraInicio(request.horaInicio());</span>
+<span class="nc" id="L51">        disponibilidad.setHoraFin(request.horaFin());</span>
+<span class="nc" id="L52">        disponibilidad.setEstado(EstadoDisponibilidad.DISPONIBLE);</span>
+
+<span class="nc" id="L54">        return toResponse(disponibilidadRepository.save(disponibilidad));</span>
+    }
+
+    public List&lt;DisponibilidadResponse&gt; listarPorTutor(Long tutorId) {
+<span class="nc" id="L58">        return disponibilidadRepository.findByTutorId(tutorId)</span>
+<span class="nc" id="L59">                .stream()</span>
+<span class="nc" id="L60">                .map(this::toResponse)</span>
+<span class="nc" id="L61">                .toList();</span>
+    }
+
+    public void eliminarDisponibilidad(Long disponibilidadId, Long tutorId) {
+<span class="nc" id="L65">        Disponibilidad d = disponibilidadRepository.findById(disponibilidadId)</span>
+<span class="nc" id="L66">                .orElseThrow(() -&gt; new NoSuchElementException(DISPONIBILIDAD_NO_ENCONTRADA));</span>
+
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        if (!d.getTutor().getId().equals(tutorId)) {</span>
+<span class="nc" id="L69">            throw new IllegalStateException(&quot;No tienes permiso para eliminar esta disponibilidad&quot;);</span>
+        }
+
+<span class="nc bnc" id="L72" title="All 2 branches missed.">        if (d.getEstado() == EstadoDisponibilidad.BLOQUEADA) {</span>
+<span class="nc" id="L73">            throw new IllegalStateException(&quot;No se puede eliminar una franja bloqueada por una sesión&quot;);</span>
+        }
+
+<span class="nc" id="L76">        disponibilidadRepository.delete(d);</span>
+<span class="nc" id="L77">    }</span>
+
+    public void bloquearFranja(Long disponibilidadId) {
+<span class="nc" id="L80">        Disponibilidad d = disponibilidadRepository.findById(disponibilidadId)</span>
+<span class="nc" id="L81">                .orElseThrow(() -&gt; new NoSuchElementException(DISPONIBILIDAD_NO_ENCONTRADA));</span>
+<span class="nc" id="L82">        d.setEstado(EstadoDisponibilidad.BLOQUEADA);</span>
+<span class="nc" id="L83">        disponibilidadRepository.save(d);</span>
+<span class="nc" id="L84">    }</span>
+
+    public void liberarFranja(Long disponibilidadId) {
+<span class="nc" id="L87">        Disponibilidad d = disponibilidadRepository.findById(disponibilidadId)</span>
+<span class="nc" id="L88">                .orElseThrow(() -&gt; new NoSuchElementException(DISPONIBILIDAD_NO_ENCONTRADA));</span>
+<span class="nc" id="L89">        d.setEstado(EstadoDisponibilidad.DISPONIBLE);</span>
+<span class="nc" id="L90">        disponibilidadRepository.save(d);</span>
+<span class="nc" id="L91">    }</span>
+
+    public DisponibilidadResponse toResponse(Disponibilidad d) {
+<span class="nc" id="L94">        return new DisponibilidadResponse(</span>
+<span class="nc" id="L95">                d.getId(), d.getDia(), d.getHoraInicio(), d.getHoraFin(), d.getEstado()</span>
+        );
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

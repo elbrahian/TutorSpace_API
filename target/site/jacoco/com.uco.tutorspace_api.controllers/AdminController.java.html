@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdminController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TutorSpace_API</a> &gt; <a href="index.source.html" class="el_package">com.uco.tutorspace_api.controllers</a> &gt; <span class="el_source">AdminController.java</span></div><h1>AdminController.java</h1><pre class="source lang-java linenums">package com.uco.tutorspace_api.controllers;
+
+import com.uco.tutorspace_api.domain.dto.*;
+import com.uco.tutorspace_api.domain.enums.EstadoSesion;
+import com.uco.tutorspace_api.service.AuditoriaService;
+import com.uco.tutorspace_api.service.MateriaService;
+import com.uco.tutorspace_api.service.ReporteDemandaService;
+import com.uco.tutorspace_api.service.ReporteDesempenoTutorService;
+import com.uco.tutorspace_api.service.TutorService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
+import java.time.LocalDate;
+import java.util.List;
+
+@RestController
+@RequestMapping(&quot;/admin&quot;)
+@RequiredArgsConstructor
+@PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+@Tag(name = &quot;Administración&quot;, description = &quot;Gestión de tutores, materias y configuración del sistema&quot;)
+public class AdminController {
+    private final TutorService tutorService;
+    private final MateriaService materiaService;
+    private final ReporteDesempenoTutorService reporteDesempenoTutorService;
+
+    // Se inyecta el service de auditoria
+    private final AuditoriaService auditoriaService;
+    private final ReporteDemandaService reporteDemandaService;
+
+    @GetMapping(&quot;/auditoria/sesiones&quot;)
+    public ResponseEntity&lt;Page&lt;AuditoriaSesionResponse&gt;&gt; auditoria(
+
+            // Filtro: estado nuevo de la sesión
+            @RequestParam(required = false)
+            EstadoSesion estadoNuevo,
+
+            // Filtro: estado anterior de la sesión
+            @RequestParam(required = false)
+            EstadoSesion estadoAnterior,
+
+            // Filtro: nombre o ID del tutor
+            @RequestParam(required = false)
+            String tutor,
+
+            // Filtro: nombre o ID del estudiante
+            @RequestParam(required = false)
+            String estudiante,
+
+            // Parámetros de paginación inyectados automáticamente por Spring
+            Pageable pageable
+    ) {
+        // Delega la lógica de consulta al servicio de auditoría y retorna HTTP 200 con el resultado
+<span class="nc" id="L65">        return ResponseEntity.ok(</span>
+<span class="nc" id="L66">                auditoriaService.obtenerAuditoria(</span>
+                        estadoNuevo,
+                        estadoAnterior,
+                        tutor,
+                        estudiante,
+                        pageable
+                )
+        );
+    }
+
+    @Operation(summary = &quot;Registrar tutor&quot;, description = &quot;Crea un nuevo tutor en el sistema&quot;)
+    @PostMapping(&quot;/tutores&quot;)
+    public ResponseEntity&lt;TutorResponse&gt; registrarTutor(
+            @Valid @RequestBody CrearTutorRequest request) {
+<span class="nc" id="L80">        return ResponseEntity.status(HttpStatus.CREATED).body(tutorService.registrarTutor(request));</span>
+    }
+
+    @Operation(summary = &quot;Listar tutores&quot;, description = &quot;Obtiene todos los tutores registrados&quot;)
+    @GetMapping(&quot;/tutores&quot;)
+    public ResponseEntity&lt;List&lt;TutorResponse&gt;&gt; listarTutores() {
+<span class="nc" id="L86">        return ResponseEntity.ok(tutorService.listarTutores());</span>
+    }
+
+    @Operation(summary = &quot;Reporte de desempeño de tutores&quot;, description = &quot;Obtiene métricas agregadas de sesiones por tutor&quot;)
+    @GetMapping(&quot;/reportes/tutores&quot;)
+    public ResponseEntity&lt;List&lt;ReporteDesempenoTutorResponse&gt;&gt; reporteDesempenoTutores(
+            @RequestParam(required = false) LocalDate fechaInicio,
+            @RequestParam(required = false) LocalDate fechaFin) {
+<span class="nc" id="L94">        return ResponseEntity.ok(reporteDesempenoTutorService.obtenerReporte(fechaInicio, fechaFin));</span>
+    }
+
+    @Operation(summary = &quot;Reporte de oferta y demanda&quot;,
+            description = &quot;Devuelve sesiones solicitadas vs tutores activos por materia, con Top 5 mayor y menor demanda&quot;)
+    @GetMapping(&quot;/reportes/demanda&quot;)
+    public ResponseEntity&lt;ReporteDemandaResponse&gt; reporteDemanda(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
+<span class="nc" id="L103">        return ResponseEntity.ok(reporteDemandaService.getReporte(fechaInicio, fechaFin));</span>
+    }
+
+    @Operation(summary = &quot;Exportar reporte de demanda a CSV&quot;,
+            description = &quot;Descarga el reporte de oferta y demanda como archivo CSV&quot;)
+    @GetMapping(&quot;/reportes/demanda/exportar&quot;)
+    public void exportarDemandaCsv(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin,
+            HttpServletResponse response) throws IOException {
+<span class="nc" id="L113">        reporteDemandaService.generarCsv(fechaInicio, fechaFin, response);</span>
+<span class="nc" id="L114">    }</span>
+
+    @Operation(summary = &quot;Desactivar tutor&quot;, description = &quot;Desactiva un tutor por su ID&quot;)
+    @PatchMapping(&quot;/tutores/{id}/desactivar&quot;)
+    public ResponseEntity&lt;TutorResponse&gt; desactivar(@PathVariable Long id) {
+<span class="nc" id="L119">        return ResponseEntity.ok(tutorService.desactivarTutor(id));</span>
+    }
+
+    @Operation(summary = &quot;Activar tutor&quot;, description = &quot;Activa un tutor por su ID&quot;)
+    @PatchMapping(&quot;/tutores/{id}/activar&quot;)
+    public ResponseEntity&lt;TutorResponse&gt; activar(@PathVariable Long id) {
+<span class="nc" id="L125">        return ResponseEntity.ok(tutorService.activarTutor(id));</span>
+    }
+
+    @Operation(summary = &quot;Crear materia&quot;, description = &quot;Crea una nueva materia en el sistema&quot;)
+    @PostMapping(&quot;/materias&quot;)
+    public ResponseEntity&lt;MateriaResponse&gt; crearMateria(
+            @Valid @RequestBody CrearMateriaRequest request) {
+<span class="nc" id="L132">        return ResponseEntity.status(HttpStatus.CREATED).body(materiaService.crearMateria(request));</span>
+    }
+
+    @Operation(summary = &quot;Listar materias&quot;, description = &quot;Obtiene todas las materias registradas&quot;)
+    @GetMapping(&quot;/materias&quot;)
+    public ResponseEntity&lt;List&lt;MateriaResponse&gt;&gt; listarMaterias() {
+<span class="nc" id="L138">        return ResponseEntity.ok(materiaService.listarMaterias());</span>
+    }
+
+    @Operation(summary = &quot;Asignar materia a tutor&quot;, description = &quot;Asigna una materia a un tutor específico&quot;)
+    @PostMapping(&quot;/tutores/{id}/materias&quot;)
+    public ResponseEntity&lt;TutorResponse&gt; asignarMateria(
+            @PathVariable Long id,
+            @Valid @RequestBody AsignarMateriaRequest request) {
+<span class="nc" id="L146">        return ResponseEntity.ok(tutorService.asignarMateria(id, request));</span>
+    }
+
+    @Operation(summary = &quot;Retirar materia de tutor&quot;, description = &quot;Retira una materia asignada a un tutor&quot;)
+    @DeleteMapping(&quot;/tutores/{tutorId}/materias/{materiaId}&quot;)
+    public ResponseEntity&lt;TutorResponse&gt; retirarMateria(
+            @PathVariable Long tutorId,
+            @PathVariable Long materiaId) {
+<span class="nc" id="L154">        return ResponseEntity.ok(tutorService.retirarMateria(tutorId, materiaId));</span>
+    }
+
+<span class="nc" id="L157">    public record ActualizarJornadaRequest(@NotBlank String jornadaGeneral) {}</span>
+
+    @Operation(summary = &quot;Actualizar jornada&quot;, description = &quot;Actualiza la jornada laboral de un tutor&quot;)
+    @PatchMapping(&quot;/tutores/{id}/jornada&quot;)
+    public ResponseEntity&lt;TutorResponse&gt; actualizarJornada(
+            @PathVariable Long id,
+            @Valid @RequestBody ActualizarJornadaRequest request) {
+<span class="nc" id="L164">        return ResponseEntity.ok(tutorService.actualizarJornada(id, request.jornadaGeneral()));</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

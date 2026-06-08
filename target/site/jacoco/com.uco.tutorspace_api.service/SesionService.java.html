@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SesionService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TutorSpace_API</a> &gt; <a href="index.source.html" class="el_package">com.uco.tutorspace_api.service</a> &gt; <span class="el_source">SesionService.java</span></div><h1>SesionService.java</h1><pre class="source lang-java linenums">package com.uco.tutorspace_api.service;
+
+import com.uco.tutorspace_api.domain.Disponibilidad;
+import com.uco.tutorspace_api.domain.Estudiante;
+import com.uco.tutorspace_api.domain.Sesion;
+import com.uco.tutorspace_api.domain.Tutor;
+import com.uco.tutorspace_api.domain.dto.CambiarEstadoSesionRequest;
+import com.uco.tutorspace_api.domain.dto.CrearSesionRequest;
+import com.uco.tutorspace_api.domain.dto.SesionResponse;
+import com.uco.tutorspace_api.domain.enums.EstadoDisponibilidad;
+import com.uco.tutorspace_api.domain.enums.EstadoSesion;
+import com.uco.tutorspace_api.domain.enums.TipoNotificacion;
+import com.uco.tutorspace_api.repositories.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.NoSuchElementException;
+
+@Service
+@RequiredArgsConstructor
+public class SesionService {
+    private final SesionRepository sesionRepository;
+    private final TutorRepository tutorRepository;
+    private final EstudianteRepository estudianteRepository;
+    private final DisponibilidadRepository disponibilidadRepository;
+    private final ChatRepository chatRepository;
+    private final DisponibilidadService disponibilidadService;
+    private final HistorialSesionService historialSesionService;
+    private final NotificacionService notificacionService;
+
+    public SesionResponse crearSesion(Long tutorId, CrearSesionRequest request) {
+<span class="nc" id="L34">        Tutor tutor = tutorRepository.findById(tutorId)</span>
+<span class="nc" id="L35">                .orElseThrow(() -&gt; new NoSuchElementException(&quot;Tutor no encontrado&quot;));</span>
+
+<span class="nc" id="L37">        Estudiante estudiante = estudianteRepository.findById(request.estudianteId())</span>
+<span class="nc" id="L38">                .orElseThrow(() -&gt; new NoSuchElementException(&quot;Estudiante no encontrado&quot;));</span>
+
+<span class="nc" id="L40">        boolean existeChat = chatRepository</span>
+<span class="nc" id="L41">                .existsByTutorIdAndEstudianteId(tutorId, request.estudianteId());</span>
+
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        if (!existeChat) {</span>
+<span class="nc" id="L44">            throw new IllegalStateException(</span>
+<span class="nc" id="L45">                    &quot;Debe existir una conversación previa para crear la sesión&quot;</span>
+            );
+        }
+
+<span class="nc" id="L49">        Disponibilidad disponibilidad = disponibilidadRepository</span>
+<span class="nc" id="L50">                .findById(request.disponibilidadId())</span>
+<span class="nc" id="L51">                .orElseThrow(() -&gt; new NoSuchElementException(&quot;Disponibilidad no encontrada&quot;));</span>
+
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        if (disponibilidad.getEstado() == EstadoDisponibilidad.BLOQUEADA) {</span>
+<span class="nc" id="L54">            throw new IllegalStateException(&quot;La franja horaria ya está ocupada&quot;);</span>
+        }
+
+<span class="nc" id="L57">        Sesion sesion = new Sesion();</span>
+<span class="nc" id="L58">        sesion.setTutor(tutor);</span>
+<span class="nc" id="L59">        sesion.setEstudiante(estudiante);</span>
+<span class="nc" id="L60">        sesion.setDisponibilidad(disponibilidad);</span>
+<span class="nc" id="L61">        sesion.setFecha(request.fecha());</span>
+<span class="nc" id="L62">        sesion.setHoraInicio(request.horaInicio());</span>
+<span class="nc" id="L63">        sesion.setHoraFin(request.horaFin());</span>
+<span class="nc" id="L64">        sesion.setEstado(EstadoSesion.PENDIENTE);</span>
+
+<span class="nc" id="L66">        Sesion guardada = sesionRepository.save(sesion);</span>
+
+<span class="nc" id="L68">        disponibilidadService.bloquearFranja(disponibilidad.getId());</span>
+
+<span class="nc" id="L70">        historialSesionService.registrarCambio(guardada, EstadoSesion.PENDIENTE, EstadoSesion.PENDIENTE);</span>
+
+<span class="nc" id="L72">        notificacionService.enviarNotificacion(</span>
+<span class="nc" id="L73">                estudiante,</span>
+<span class="nc" id="L74">                TipoNotificacion.SESION_CREADA,</span>
+<span class="nc" id="L75">                &quot;El tutor &quot; + tutor.getNombre() + &quot; agendó una sesión contigo el &quot; + request.fecha()</span>
+        );
+
+<span class="nc" id="L78">        return toResponse(guardada);</span>
+    }
+
+    public SesionResponse cambiarEstado(Long sesionId, Long tutorId,
+                                        CambiarEstadoSesionRequest request) {
+<span class="nc" id="L83">        Sesion sesion = sesionRepository.findById(sesionId)</span>
+<span class="nc" id="L84">                .orElseThrow(() -&gt; new NoSuchElementException(&quot;Sesión no encontrada&quot;));</span>
+
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        if (!sesion.getTutor().getId().equals(tutorId)) {</span>
+<span class="nc" id="L87">            throw new IllegalStateException(&quot;No tienes permiso para modificar esta sesión&quot;);</span>
+        }
+
+<span class="nc" id="L90">        EstadoSesion estadoAnterior = sesion.getEstado();</span>
+<span class="nc" id="L91">        EstadoSesion estadoNuevo = request.nuevoEstado();</span>
+
+        // MNT-12 — una sesión solo puede marcarse COMPLETADA si estaba APROBADA.
+        // Así el flujo hacia COMPLETADA (estado requerido para poder evaluar) es claro
+        // y no se completan sesiones PENDIENTES o CANCELADAS por error.
+<span class="nc bnc" id="L96" title="All 2 branches missed.">        if (estadoNuevo == EstadoSesion.COMPLETADA</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">                &amp;&amp; estadoAnterior != EstadoSesion.APROBADA) {</span>
+<span class="nc" id="L98">            throw new IllegalStateException(&quot;Solo se puede completar una sesión que esté APROBADA&quot;);</span>
+        }
+
+<span class="nc" id="L101">        sesion.setEstado(estadoNuevo);</span>
+<span class="nc" id="L102">        Sesion actualizada = sesionRepository.save(sesion);</span>
+
+<span class="nc" id="L104">        historialSesionService.registrarCambio(actualizada, estadoAnterior, estadoNuevo);</span>
+
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        if (estadoNuevo == EstadoSesion.CANCELADA) {</span>
+<span class="nc" id="L107">            disponibilidadService.liberarFranja(sesion.getDisponibilidad().getId());</span>
+        }
+
+<span class="nc" id="L110">        notificacionService.enviarNotificacion(</span>
+<span class="nc" id="L111">                sesion.getEstudiante(),</span>
+<span class="nc" id="L112">                TipoNotificacion.CAMBIO_ESTADO,</span>
+<span class="nc" id="L113">                &quot;Tu sesión del &quot; + sesion.getFecha() + &quot; cambió a estado: &quot; + estadoNuevo</span>
+        );
+
+<span class="nc" id="L116">        return toResponse(actualizada);</span>
+    }
+
+    public List&lt;SesionResponse&gt; obtenerPorEstudiante(Long estudianteId) {
+<span class="nc" id="L120">        return sesionRepository.findByEstudianteId(estudianteId)</span>
+<span class="nc" id="L121">                .stream().map(this::toResponse).toList();</span>
+    }
+
+    public List&lt;SesionResponse&gt; obtenerPorTutor(Long tutorId) {
+<span class="nc" id="L125">        return sesionRepository.findByTutorId(tutorId)</span>
+<span class="nc" id="L126">                .stream().map(this::toResponse).toList();</span>
+    }
+
+    public List&lt;SesionResponse&gt; obtenerPorEstudianteYFecha(Long estudianteId,
+                                                           LocalDate inicio,
+                                                           LocalDate fin) {
+<span class="nc" id="L132">        return sesionRepository</span>
+<span class="nc" id="L133">                .findByEstudianteIdAndFechaBetween(estudianteId, inicio, fin)</span>
+<span class="nc" id="L134">                .stream().map(this::toResponse).toList();</span>
+    }
+
+    public SesionResponse toResponse(Sesion s) {
+<span class="nc" id="L138">        return new SesionResponse(</span>
+<span class="nc" id="L139">                s.getId(),</span>
+<span class="nc" id="L140">                s.getTutor().getId(),</span>
+<span class="nc" id="L141">                s.getTutor().getNombre(),</span>
+<span class="nc" id="L142">                s.getEstudiante().getId(),</span>
+<span class="nc" id="L143">                s.getEstudiante().getNombre(),</span>
+<span class="nc" id="L144">                s.getFecha(),</span>
+<span class="nc" id="L145">                s.getHoraInicio(),</span>
+<span class="nc" id="L146">                s.getHoraFin(),</span>
+<span class="nc" id="L147">                s.getEstado(),</span>
+<span class="nc" id="L148">                s.getCreatedAt()</span>
+        );
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

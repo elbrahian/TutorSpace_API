@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RateLimitFilter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TutorSpace_API</a> &gt; <a href="index.source.html" class="el_package">com.uco.tutorspace_api.config</a> &gt; <span class="el_source">RateLimitFilter.java</span></div><h1>RateLimitFilter.java</h1><pre class="source lang-java linenums">package com.uco.tutorspace_api.config;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+import java.time.Instant;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+@Component
+@Order(1)
+<span class="fc" id="L18">public class RateLimitFilter extends OncePerRequestFilter {</span>
+
+    private static final int MAX_REQUESTS = 20;
+    private static final long WINDOW_SECONDS = 60;
+
+<span class="fc" id="L23">    private final Map&lt;String, RequestBucket&gt; buckets = new ConcurrentHashMap&lt;&gt;();</span>
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain chain)
+            throws ServletException, IOException {
+
+<span class="nc bnc" id="L31" title="All 2 branches missed.">        if (!request.getRequestURI().startsWith(&quot;/auth/&quot;)) {</span>
+<span class="nc" id="L32">            chain.doFilter(request, response);</span>
+<span class="nc" id="L33">            return;</span>
+        }
+
+<span class="nc" id="L36">        String ip = request.getRemoteAddr();</span>
+<span class="nc" id="L37">        RequestBucket bucket = buckets.computeIfAbsent(ip, k -&gt; new RequestBucket());</span>
+
+<span class="nc bnc" id="L39" title="All 2 branches missed.">        if (bucket.tryConsume()) {</span>
+<span class="nc" id="L40">            chain.doFilter(request, response);</span>
+        } else {
+<span class="nc" id="L42">            response.setStatus(429);</span>
+<span class="nc" id="L43">            response.setContentType(&quot;application/json&quot;);</span>
+<span class="nc" id="L44">            response.getWriter().write(</span>
+                    &quot;{\&quot;error\&quot;: \&quot;Demasiadas peticiones. Intenta de nuevo en 1 minuto\&quot;}&quot;
+            );
+<span class="nc" id="L47">            response.getWriter().flush();</span>
+        }
+<span class="nc" id="L49">    }</span>
+
+<span class="nc" id="L51">    private static class RequestBucket {</span>
+<span class="nc" id="L52">        private int count = 0;</span>
+<span class="nc" id="L53">        private long windowStart = Instant.now().getEpochSecond();</span>
+
+        synchronized boolean tryConsume() {
+<span class="nc" id="L56">            long now = Instant.now().getEpochSecond();</span>
+            
+<span class="nc bnc" id="L58" title="All 2 branches missed.">            if (now - windowStart &gt;= WINDOW_SECONDS) {</span>
+<span class="nc" id="L59">                count = 0;</span>
+<span class="nc" id="L60">                windowStart = now;</span>
+            }
+            
+<span class="nc bnc" id="L63" title="All 2 branches missed.">            if (count &lt; MAX_REQUESTS) {</span>
+<span class="nc" id="L64">                count++;</span>
+<span class="nc" id="L65">                return true;</span>
+            }
+<span class="nc" id="L67">            return false;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

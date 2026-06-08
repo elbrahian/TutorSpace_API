@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TutorSpace_API</a> &gt; <a href="index.source.html" class="el_package">com.uco.tutorspace_api.service</a> &gt; <span class="el_source">AuthService.java</span></div><h1>AuthService.java</h1><pre class="source lang-java linenums">package com.uco.tutorspace_api.service;
+
+import com.uco.tutorspace_api.utils.EmailValidator;
+import com.uco.tutorspace_api.utils.JwtUtil;
+import com.uco.tutorspace_api.domain.Estudiante;
+import com.uco.tutorspace_api.domain.Usuario;
+import com.uco.tutorspace_api.domain.dto.AuthResponse;
+import com.uco.tutorspace_api.domain.dto.LoginRequest;
+import com.uco.tutorspace_api.domain.dto.RegisterRequest;
+import com.uco.tutorspace_api.domain.enums.EstadoUsuario;
+import com.uco.tutorspace_api.domain.enums.RolUsuario;
+import com.uco.tutorspace_api.repositories.EstudianteRepository;
+import com.uco.tutorspace_api.repositories.UsuarioRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+public class AuthService {
+
+    private final UsuarioRepository usuarioRepository;
+    private final EstudianteRepository estudianteRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
+    private final EmailValidator emailValidator;
+    private final AuthenticationManager authenticationManager;
+
+    public AuthResponse registrarEstudiante(RegisterRequest request) {
+
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        if (!emailValidator.esCorreoInstitucional(request.email())) {</span>
+<span class="fc" id="L36">            throw new IllegalArgumentException(</span>
+                    &quot;Solo se permiten correos institucionales con dominio @uco.net.co&quot;
+            );
+        }
+
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        if (usuarioRepository.existsByEmail(request.email())) {</span>
+<span class="fc" id="L42">            throw new IllegalStateException(</span>
+                    &quot;Ya existe una cuenta registrada con este correo&quot;
+            );
+        }
+
+<span class="fc" id="L47">        Estudiante estudiante = new Estudiante();</span>
+<span class="fc" id="L48">        estudiante.setNombre(request.nombre());</span>
+<span class="fc" id="L49">        estudiante.setEmail(request.email().toLowerCase());</span>
+<span class="fc" id="L50">        estudiante.setPassword(passwordEncoder.encode(request.password()));</span>
+<span class="fc" id="L51">        estudiante.setRol(RolUsuario.ESTUDIANTE);</span>
+<span class="fc" id="L52">        estudiante.setEstado(EstadoUsuario.ACTIVO);</span>
+
+<span class="fc" id="L54">        Estudiante guardado = estudianteRepository.save(estudiante);</span>
+
+<span class="fc" id="L56">        String token = jwtUtil.generateToken(guardado);</span>
+<span class="fc" id="L57">        return new AuthResponse(token, guardado.getRol().name(),</span>
+<span class="fc" id="L58">                guardado.getNombre(), guardado.getId());</span>
+    }
+
+    public AuthResponse login(LoginRequest request) {
+
+<span class="fc" id="L63">        Usuario usuario = usuarioRepository.findByEmail(request.email())</span>
+<span class="fc" id="L64">                .orElseThrow(() -&gt; new UsernameNotFoundException(&quot;Correo o contraseña incorrectos&quot;));</span>
+
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">        if (usuario.getEstado() == EstadoUsuario.INACTIVO) {</span>
+<span class="nc" id="L67">            throw new IllegalStateException(&quot;Tu cuenta está desactivada, contacta al administrador&quot;);</span>
+        }
+
+        try {
+<span class="fc" id="L71">            authenticationManager.authenticate(</span>
+<span class="fc" id="L72">                    new UsernamePasswordAuthenticationToken(request.email(), request.password())</span>
+            );
+<span class="nc" id="L74">        } catch (BadCredentialsException e) {</span>
+<span class="nc" id="L75">            throw new UsernameNotFoundException(&quot;Correo o contraseña incorrectos&quot;);</span>
+<span class="fc" id="L76">        }</span>
+
+<span class="fc" id="L78">        String token = jwtUtil.generateToken(usuario);</span>
+<span class="fc" id="L79">        return new AuthResponse(token, usuario.getRol().name(),</span>
+<span class="fc" id="L80">                usuario.getNombre(), usuario.getId());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

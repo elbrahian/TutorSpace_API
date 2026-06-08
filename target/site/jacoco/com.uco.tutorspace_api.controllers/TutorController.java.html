@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TutorController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TutorSpace_API</a> &gt; <a href="index.source.html" class="el_package">com.uco.tutorspace_api.controllers</a> &gt; <span class="el_source">TutorController.java</span></div><h1>TutorController.java</h1><pre class="source lang-java linenums">package com.uco.tutorspace_api.controllers;
+
+import com.uco.tutorspace_api.config.CustomUserDetails;
+import com.uco.tutorspace_api.domain.dto.CrearDisponibilidadRequest;
+import com.uco.tutorspace_api.domain.dto.DisponibilidadResponse;
+import com.uco.tutorspace_api.domain.dto.TutorResponse;
+import com.uco.tutorspace_api.service.DisponibilidadService;
+import com.uco.tutorspace_api.service.TutorService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping(&quot;/tutor&quot;)
+@RequiredArgsConstructor
+@PreAuthorize(&quot;hasRole('TUTOR')&quot;)
+@Tag(name = &quot;Tutor&quot;, description = &quot;Gestión de disponibilidad y perfil del tutor&quot;)
+public class TutorController {
+    private final DisponibilidadService disponibilidadService;
+    private final TutorService tutorService;
+
+    private Long getTutorId(Authentication auth) {
+<span class="nc" id="L31">        return ((CustomUserDetails) auth.getPrincipal()).getId();</span>
+    }
+
+    @Operation(summary = &quot;Crear disponibilidad&quot;, description = &quot;Crea una nueva franja de disponibilidad horaria&quot;)
+    @PostMapping(&quot;/disponibilidad&quot;)
+    public ResponseEntity&lt;DisponibilidadResponse&gt; crear(
+            @Valid @RequestBody CrearDisponibilidadRequest request,
+            Authentication auth) {
+<span class="nc" id="L39">        return ResponseEntity.status(HttpStatus.CREATED)</span>
+<span class="nc" id="L40">                .body(disponibilidadService.crearDisponibilidad(getTutorId(auth), request));</span>
+    }
+
+    @Operation(summary = &quot;Listar disponibilidad&quot;, description = &quot;Obtiene todas las franjas de disponibilidad del tutor&quot;)
+    @GetMapping(&quot;/disponibilidad&quot;)
+    public ResponseEntity&lt;List&lt;DisponibilidadResponse&gt;&gt; listar(Authentication auth) {
+<span class="nc" id="L46">        return ResponseEntity.ok(disponibilidadService.listarPorTutor(getTutorId(auth)));</span>
+    }
+
+    @Operation(summary = &quot;Eliminar disponibilidad&quot;, description = &quot;Elimina una franja de disponibilidad&quot;)
+    @DeleteMapping(&quot;/disponibilidad/{id}&quot;)
+    public ResponseEntity&lt;Void&gt; eliminar(@PathVariable Long id, Authentication auth) {
+<span class="nc" id="L52">        disponibilidadService.eliminarDisponibilidad(id, getTutorId(auth));</span>
+<span class="nc" id="L53">        return ResponseEntity.noContent().build();</span>
+    }
+
+    @Operation(summary = &quot;Ver perfil&quot;, description = &quot;Obtiene el perfil del tutor autenticado&quot;)
+    @GetMapping(&quot;/perfil&quot;)
+    public ResponseEntity&lt;TutorResponse&gt; verPerfil(Authentication auth) {
+<span class="nc" id="L59">        Long tutorId = ((CustomUserDetails) auth.getPrincipal()).getId();</span>
+<span class="nc" id="L60">        return ResponseEntity.ok(tutorService.getTutorById(tutorId));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

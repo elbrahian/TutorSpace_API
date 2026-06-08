@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReporteDemandaService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TutorSpace_API</a> &gt; <a href="index.source.html" class="el_package">com.uco.tutorspace_api.service</a> &gt; <span class="el_source">ReporteDemandaService.java</span></div><h1>ReporteDemandaService.java</h1><pre class="source lang-java linenums">package com.uco.tutorspace_api.service;
+
+import com.uco.tutorspace_api.domain.dto.MateriaDemandaResponse;
+import com.uco.tutorspace_api.domain.dto.ReporteDemandaResponse;
+import com.uco.tutorspace_api.repositories.SesionRepository;
+import com.uco.tutorspace_api.repositories.TutorRepository;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.time.LocalDate;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class ReporteDemandaService {
+
+    private final SesionRepository sesionRepository;
+    private final TutorRepository tutorRepository;
+
+    public ReporteDemandaResponse getReporte(LocalDate fechaInicio, LocalDate fechaFin) {
+<span class="nc" id="L25">        Map&lt;String, Long&gt; sesionesPorMateria = sesionRepository</span>
+<span class="nc" id="L26">                .countSesionesByMateria(fechaInicio, fechaFin)</span>
+<span class="nc" id="L27">                .stream()</span>
+<span class="nc" id="L28">                .collect(Collectors.toMap(</span>
+<span class="nc" id="L29">                        row -&gt; (String) row[0],</span>
+<span class="nc" id="L30">                        row -&gt; (Long) row[1]</span>
+                ));
+
+<span class="nc" id="L33">        Map&lt;String, Long&gt; tutoresPorMateria = tutorRepository</span>
+<span class="nc" id="L34">                .countTutoresActivosByMateria()</span>
+<span class="nc" id="L35">                .stream()</span>
+<span class="nc" id="L36">                .collect(Collectors.toMap(</span>
+<span class="nc" id="L37">                        row -&gt; (String) row[0],</span>
+<span class="nc" id="L38">                        row -&gt; (Long) row[1]</span>
+                ));
+
+<span class="nc" id="L41">        Set&lt;String&gt; todasLasMaterias = new HashSet&lt;&gt;();</span>
+<span class="nc" id="L42">        todasLasMaterias.addAll(sesionesPorMateria.keySet());</span>
+<span class="nc" id="L43">        todasLasMaterias.addAll(tutoresPorMateria.keySet());</span>
+
+<span class="nc" id="L45">        List&lt;MateriaDemandaResponse&gt; materias = todasLasMaterias.stream()</span>
+<span class="nc" id="L46">                .map(nombre -&gt; {</span>
+<span class="nc" id="L47">                    int sesiones = sesionesPorMateria.getOrDefault(nombre, 0L).intValue();</span>
+<span class="nc" id="L48">                    int tutores  = tutoresPorMateria.getOrDefault(nombre, 0L).intValue();</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">                    Double tasa  = tutores == 0 ? null : (double) sesiones / tutores;</span>
+<span class="nc" id="L50">                    return new MateriaDemandaResponse(nombre, sesiones, tutores, tasa);</span>
+                })
+<span class="nc" id="L52">                .sorted(Comparator.comparing(MateriaDemandaResponse::materia))</span>
+<span class="nc" id="L53">                .collect(Collectors.toList());</span>
+
+<span class="nc" id="L55">        List&lt;MateriaDemandaResponse&gt; top5Mayor = materias.stream()</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">                .filter(m -&gt; m.sesionesSolicitadas() &gt; 0)</span>
+<span class="nc" id="L57">                .sorted(Comparator.comparingInt(MateriaDemandaResponse::sesionesSolicitadas).reversed())</span>
+<span class="nc" id="L58">                .limit(5)</span>
+<span class="nc" id="L59">                .collect(Collectors.toList());</span>
+
+<span class="nc" id="L61">        List&lt;MateriaDemandaResponse&gt; top5Menor = materias.stream()</span>
+<span class="nc" id="L62">                .sorted(Comparator.comparingInt(MateriaDemandaResponse::sesionesSolicitadas))</span>
+<span class="nc" id="L63">                .limit(5)</span>
+<span class="nc" id="L64">                .collect(Collectors.toList());</span>
+
+<span class="nc" id="L66">        return new ReporteDemandaResponse(materias, top5Mayor, top5Menor);</span>
+    }
+
+    public void generarCsv(LocalDate fechaInicio, LocalDate fechaFin, HttpServletResponse response) throws IOException {
+<span class="nc" id="L70">        response.setContentType(&quot;text/csv; charset=UTF-8&quot;);</span>
+<span class="nc" id="L71">        response.setCharacterEncoding(&quot;UTF-8&quot;);</span>
+<span class="nc" id="L72">        response.setHeader(&quot;Content-Disposition&quot;, &quot;attachment; filename=\&quot;demanda_tutorias.csv\&quot;&quot;);</span>
+
+<span class="nc" id="L74">        ReporteDemandaResponse reporte = getReporte(fechaInicio, fechaFin);</span>
+
+<span class="nc" id="L76">        PrintWriter writer = response.getWriter();</span>
+<span class="nc" id="L77">        writer.write('\uFEFF');</span>
+<span class="nc" id="L78">        writer.println(&quot;Materia,Sesiones Solicitadas,Tutores Disponibles,Tasa de Cobertura&quot;);</span>
+
+<span class="nc bnc" id="L80" title="All 2 branches missed.">        for (MateriaDemandaResponse item : reporte.materias()) {</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">            String tasa = item.tasaCobertura() == null</span>
+<span class="nc" id="L82">                    ? &quot;Sin tutores&quot;</span>
+<span class="nc" id="L83">                    : String.format(Locale.US, &quot;%.2f&quot;, item.tasaCobertura());</span>
+<span class="nc" id="L84">            writer.printf(&quot;\&quot;%s\&quot;,%d,%d,%s%n&quot;,</span>
+<span class="nc" id="L85">                    item.materia().replace(&quot;\&quot;&quot;, &quot;\&quot;\&quot;&quot;),</span>
+<span class="nc" id="L86">                    item.sesionesSolicitadas(),</span>
+<span class="nc" id="L87">                    item.tutoresDisponibles(),</span>
+<span class="nc" id="L88">                    tasa);</span>
+        }
+<span class="nc" id="L90">        writer.flush();</span>
+<span class="nc" id="L91">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

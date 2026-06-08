@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CalificacionSesionService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TutorSpace_API</a> &gt; <a href="index.source.html" class="el_package">com.uco.tutorspace_api.service</a> &gt; <span class="el_source">CalificacionSesionService.java</span></div><h1>CalificacionSesionService.java</h1><pre class="source lang-java linenums">package com.uco.tutorspace_api.service;
+
+import com.uco.tutorspace_api.domain.CalificacionSesion;
+import com.uco.tutorspace_api.domain.Estudiante;
+import com.uco.tutorspace_api.domain.Sesion;
+import com.uco.tutorspace_api.domain.dto.CalificacionSesionRequest;
+import com.uco.tutorspace_api.domain.dto.CalificacionSesionResponse;
+import com.uco.tutorspace_api.domain.enums.EstadoSesion;
+import com.uco.tutorspace_api.exceptions.CalificacionTutoriaException;
+import com.uco.tutorspace_api.repositories.CalificacionSesionRepository;
+import com.uco.tutorspace_api.repositories.EstudianteRepository;
+import com.uco.tutorspace_api.repositories.SesionRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+public class CalificacionSesionService {
+
+    private final CalificacionSesionRepository calificacionSesionRepository;
+    private final SesionRepository sesionRepository;
+    private final EstudianteRepository estudianteRepository;
+
+    public CalificacionSesionResponse calificarSesion(Long estudianteId, Long sesionId,
+                                                      CalificacionSesionRequest request) {
+
+<span class="nc" id="L29">        Sesion sesion = sesionRepository.findById(sesionId)</span>
+<span class="nc" id="L30">                .orElseThrow(() -&gt; new CalificacionTutoriaException(</span>
+<span class="nc" id="L31">                        &quot;Sesión no encontrada&quot;, HttpStatus.NOT_FOUND));</span>
+
+        // RF-05 — solo el estudiante dueño de la sesión puede calificarla
+<span class="nc bnc" id="L34" title="All 2 branches missed.">        if (!sesion.getEstudiante().getId().equals(estudianteId)) {</span>
+<span class="nc" id="L35">            throw new AccessDeniedException(&quot;No puedes calificar una sesión que no es tuya&quot;);</span>
+        }
+
+        // RF-07 / E1 — solo sesiones COMPLETADA
+<span class="nc bnc" id="L39" title="All 2 branches missed.">        if (sesion.getEstado() != EstadoSesion.COMPLETADA) {</span>
+<span class="nc" id="L40">            throw new CalificacionTutoriaException(</span>
+<span class="nc" id="L41">                    &quot;Solo puedes calificar sesiones completadas&quot;, HttpStatus.CONFLICT);</span>
+        }
+
+        // RF-06 / E2 — no se permite calificar dos veces =&gt; 409 Conflict
+<span class="nc bnc" id="L45" title="All 2 branches missed.">        if (calificacionSesionRepository.existsBySesionIdAndEstudianteId(sesionId, estudianteId)) {</span>
+<span class="nc" id="L46">            throw new CalificacionTutoriaException(</span>
+<span class="nc" id="L47">                    &quot;Ya calificaste esta sesión&quot;, HttpStatus.CONFLICT);</span>
+        }
+
+<span class="nc" id="L50">        Estudiante estudiante = estudianteRepository.findById(estudianteId)</span>
+<span class="nc" id="L51">                .orElseThrow(() -&gt; new CalificacionTutoriaException(</span>
+<span class="nc" id="L52">                        &quot;Estudiante no encontrado&quot;, HttpStatus.NOT_FOUND));</span>
+
+<span class="nc" id="L54">        CalificacionSesion calificacion = new CalificacionSesion();</span>
+<span class="nc" id="L55">        calificacion.setSesion(sesion);</span>
+<span class="nc" id="L56">        calificacion.setEstudiante(estudiante);</span>
+<span class="nc" id="L57">        calificacion.setCalificacion(request.calificacion());</span>
+<span class="nc" id="L58">        calificacion.setComentario(request.comentario());</span>
+
+<span class="nc" id="L60">        CalificacionSesion guardada = calificacionSesionRepository.save(calificacion);</span>
+
+        // RF-09 — confirmación con los datos registrados
+<span class="nc" id="L63">        return new CalificacionSesionResponse(</span>
+<span class="nc" id="L64">                guardada.getId(),</span>
+<span class="nc" id="L65">                sesion.getId(),</span>
+<span class="nc" id="L66">                sesion.getTutor().getNombre(),</span>
+<span class="nc" id="L67">                guardada.getCalificacion(),</span>
+<span class="nc" id="L68">                guardada.getComentario(),</span>
+<span class="nc" id="L69">                sesion.getFecha(),</span>
+<span class="nc" id="L70">                sesion.getHoraInicio(),</span>
+<span class="nc" id="L71">                &quot;Calificación registrada con éxito. ¡Muchas gracias!&quot;</span>
+        );
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
