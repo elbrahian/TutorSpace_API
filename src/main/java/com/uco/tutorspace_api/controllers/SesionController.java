@@ -1,9 +1,8 @@
 package com.uco.tutorspace_api.controllers;
 
 import com.uco.tutorspace_api.config.CustomUserDetails;
-import com.uco.tutorspace_api.domain.dto.CambiarEstadoSesionRequest;
-import com.uco.tutorspace_api.domain.dto.CrearSesionRequest;
-import com.uco.tutorspace_api.domain.dto.SesionResponse;
+import com.uco.tutorspace_api.domain.dto.*;
+import com.uco.tutorspace_api.service.EvaluacionEstudianteService;
 import com.uco.tutorspace_api.service.SesionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,6 +23,8 @@ import java.util.List;
 @Tag(name = "Sesiones", description = "Gestión de sesiones de tutoría")
 public class SesionController {
     private final SesionService sesionService;
+    private final EvaluacionEstudianteService evaluacionEstudianteService;
+
 
     private Long getUserId(Authentication auth) {
         return ((CustomUserDetails) auth.getPrincipal()).getId();
@@ -39,7 +40,7 @@ public class SesionController {
                 .body(sesionService.crearSesion(getUserId(auth), request));
     }
 
-    @Operation(summary = "Cambiar estado de sesión", description = "El tutor cambia el estado: PENDIENTE → APROBADA o CANCELADA")
+    @Operation(summary = "Cambiar estado de sesión", description = "El tutor cambia el estado: PENDIENTE → APROBADA o CANCELADA; APROBADA → COMPLETADA o CANCELADA")
     @PatchMapping("/{id}/estado")
     @PreAuthorize("hasRole('TUTOR')")
     public ResponseEntity<SesionResponse> cambiarEstado(
@@ -71,4 +72,25 @@ public class SesionController {
                 sesionService.obtenerPorEstudianteYFecha(getUserId(auth), inicio, fin)
         );
     }
+
+    @PostMapping("/{id}/evaluacion-estudiante")
+    @PreAuthorize("hasRole('TUTOR')")
+    @Operation(summary = "Evaluar estudiante",
+            description = "El tutor evalúa el desempeño del estudiante tras una sesión completada (RF-03, HU-M13)")
+    public ResponseEntity<EvaluacionEstudianteResponse> evaluarEstudiante(
+            @PathVariable Long id,
+            @Valid @RequestBody EvaluacionEstudianteRequest request,
+            Authentication auth) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(evaluacionEstudianteService.evaluarEstudiante(id, getUserId(auth), request));
+    }
+
+    @GetMapping("/{id}/evaluacion-estudiante")
+    @Operation(summary = "Obtener evaluación de sesión",
+            description = "Obtiene la evaluación registrada para una sesión (RF-06)")
+    public ResponseEntity<EvaluacionEstudianteResponse> obtenerEvaluacion(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(evaluacionEstudianteService.obtenerEvaluacionPorSesion(id));
+    }
+
 }
