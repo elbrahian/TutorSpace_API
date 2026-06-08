@@ -1,6 +1,6 @@
 package com.uco.tutorspace_api.config;
 
-import com.uco.tutorspace_api.Utils.JwtUtil;
+import com.uco.tutorspace_api.utils.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

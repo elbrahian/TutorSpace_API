@@ -1,4 +1,4 @@
-package com.uco.tutorspace_api.Utils;
+package com.uco.tutorspace_api.utils;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

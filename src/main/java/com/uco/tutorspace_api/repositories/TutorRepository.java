@@ -1,12 +1,14 @@
 package com.uco.tutorspace_api.repositories;
 
 import com.uco.tutorspace_api.domain.Tutor;
+import com.uco.tutorspace_api.domain.enums.EstadoUsuario;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface TutorRepository extends JpaRepository<Tutor, Long> {
@@ -22,4 +24,15 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
 
     @Query("SELECT t FROM Tutor t LEFT JOIN FETCH t.materias WHERE t.id = :id")
     Optional<Tutor> findByIdWithMaterias(@Param("id") Long id);
+
+    List<Tutor> findByEstadoOrderByNombreAsc(EstadoUsuario estado);
+
+    @Query("""
+        SELECT m.nombre, COUNT(DISTINCT t.id)
+        FROM Tutor t
+        JOIN t.materias m
+        WHERE t.estado = 'ACTIVO'
+        GROUP BY m.id, m.nombre
+        """)
+    List<Object[]> countTutoresActivosByMateria();
 }
