@@ -29,6 +29,7 @@ public class SesionService {
     private final DisponibilidadService disponibilidadService;
     private final HistorialSesionService historialSesionService;
     private final NotificacionService notificacionService;
+    private final CalificacionSesionRepository calificacionSesionRepository;
 
     public SesionResponse crearSesion(Long tutorId, CrearSesionRequest request) {
         Tutor tutor = tutorRepository.findById(tutorId)
@@ -135,6 +136,11 @@ public class SesionService {
     }
 
     public SesionResponse toResponse(Sesion s) {
+        // MNT-12 — indica si el estudiante dueño ya evaluó la sesión, para que el
+        // front muestre el botón "Evaluar sesión" solo cuando aún no se ha calificado.
+        boolean calificada = calificacionSesionRepository
+                .existsBySesionIdAndEstudianteId(s.getId(), s.getEstudiante().getId());
+
         return new SesionResponse(
                 s.getId(),
                 s.getTutor().getId(),
@@ -145,7 +151,8 @@ public class SesionService {
                 s.getHoraInicio(),
                 s.getHoraFin(),
                 s.getEstado(),
-                s.getCreatedAt()
+                s.getCreatedAt(),
+                calificada
         );
     }
 }
