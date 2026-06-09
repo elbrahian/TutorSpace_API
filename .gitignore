@@ -1,24 +1,23 @@
+<<<<<<< HEAD
 ﻿HELP.md
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+=======
+# Claude
+.claude/
+>>>>>>> origin/Develop
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
+# Properties locales
+src/main/resources/application.properties
+src/main/resources/application-local.properties
+application-local.properties
 
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
+# IntelliJ IDEA
+.idea/
 
+<<<<<<< HEAD
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
@@ -34,3 +33,7 @@ build/
 
 src/main/resources/application.properties
 src/main/resources/application-local.properties
+=======
+# Build
+target/
+>>>>>>> origin/Develop

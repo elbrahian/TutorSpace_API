@@ -1,0 +1,30 @@
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="arq-m11" name="MNT-11 Arquitectura">
+    <mxGraphModel dx="1000" dy="680" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1000" pageHeight="680" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="gFront" value="Frontend — TutorSpace_APP (React + Vite)" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;fillColor=#eff6ff;strokeColor=#2563eb;fontStyle=1;fontColor=#1e3a8a;" vertex="1" parent="1"><mxGeometry x="40" y="60" width="280" height="420" as="geometry" /></mxCell>
+        <mxCell id="fPage" value="ReporteUsoPorRol.tsx&#10;(tarjetas · filtros · tabla)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#2563eb;" vertex="1" parent="1"><mxGeometry x="70" y="110" width="220" height="60" as="geometry" /></mxCell>
+        <mxCell id="fChart" value="GraficoActividadSemanal.tsx&#10;(gráfico SVG por rol)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#2563eb;" vertex="1" parent="1"><mxGeometry x="70" y="195" width="220" height="60" as="geometry" /></mxCell>
+        <mxCell id="fPdf" value="exportarReportePdf.ts&#10;(jsPDF · descarga PDF)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#2563eb;" vertex="1" parent="1"><mxGeometry x="70" y="280" width="220" height="60" as="geometry" /></mxCell>
+        <mxCell id="fApi" value="reportesApi.getUsoPorRol()&#10;(axios)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#2563eb;" vertex="1" parent="1"><mxGeometry x="70" y="365" width="220" height="60" as="geometry" /></mxCell>
+
+        <mxCell id="gBack" value="Backend — TutorSpace_API (Spring Boot)" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;fillColor=#f0fdf4;strokeColor=#16a34a;fontStyle=1;fontColor=#166534;" vertex="1" parent="1"><mxGeometry x="470" y="60" width="300" height="420" as="geometry" /></mxCell>
+        <mxCell id="bCtrl" value="AdminController&#10;GET /admin/reportes/uso&#10;@PreAuthorize ADMIN" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dcfce7;strokeColor=#16a34a;" vertex="1" parent="1"><mxGeometry x="500" y="110" width="240" height="70" as="geometry" /></mxCell>
+        <mxCell id="bSvc" value="ReporteUsoService&#10;(agrega métricas por rol&#10;y actividad semanal)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dcfce7;strokeColor=#16a34a;" vertex="1" parent="1"><mxGeometry x="500" y="205" width="240" height="70" as="geometry" /></mxCell>
+        <mxCell id="bRepo" value="SesionRepository · MensajeRepository&#10;(consultas proyectadas, solo lectura)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dcfce7;strokeColor=#16a34a;" vertex="1" parent="1"><mxGeometry x="500" y="300" width="240" height="70" as="geometry" /></mxCell>
+        <mxCell id="bDto" value="DTOs: ReporteUsoResponse ·&#10;UsoPorRolResponse · ActividadSemanalResponse" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f0fdf4;strokeColor=#16a34a;fontSize=10;dashed=1;" vertex="1" parent="1"><mxGeometry x="500" y="395" width="240" height="50" as="geometry" /></mxCell>
+
+        <mxCell id="db" value="PostgreSQL&#10;sesiones · mensajes · usuarios" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=14;fillColor=#fef9c3;strokeColor=#ca8a04;" vertex="1" parent="1"><mxGeometry x="840" y="210" width="130" height="120" as="geometry" /></mxCell>
+
+        <mxCell id="eHttp" value="HTTP GET&#10;(JWT, rol ADMIN)&#10;?fechaInicio&amp;fechaFin" style="endArrow=block;startArrow=none;html=1;strokeColor=#1e293b;fontSize=10;" edge="1" parent="1" source="fApi" target="bCtrl"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="eJson" value="ReporteUsoResponse (JSON)" style="endArrow=open;dashed=1;html=1;strokeColor=#475569;fontSize=10;" edge="1" parent="1" source="bCtrl" target="fApi"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="420" y="95" /></Array></mxGeometry></mxCell>
+        <mxCell id="e1" style="endArrow=block;html=1;strokeColor=#16a34a;" edge="1" parent="1" source="bCtrl" target="bSvc"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e2" style="endArrow=block;html=1;strokeColor=#16a34a;" edge="1" parent="1" source="bSvc" target="bRepo"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e3" value="SELECT" style="endArrow=block;html=1;strokeColor=#ca8a04;fontSize=10;" edge="1" parent="1" source="bRepo" target="db"><mxGeometry relative="1" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

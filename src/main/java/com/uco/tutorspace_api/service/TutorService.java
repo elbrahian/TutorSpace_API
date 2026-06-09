@@ -16,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
@@ -25,10 +26,9 @@ public class TutorService {
     private final MateriaRepository materiaRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // Solo admin puede llamar esto (se controla en el controller)
     public TutorResponse registrarTutor(CrearTutorRequest request) {
         if (usuarioRepository.existsByEmail(request.email())) {
-            throw new RuntimeException("El correo ya está registrado");
+            throw new IllegalStateException("El correo ya está registrado");
         }
 
         Tutor tutor = new Tutor();
@@ -47,14 +47,13 @@ public class TutorService {
         Tutor tutor = getTutorOrThrow(tutorId);
 
         Materia materia = materiaRepository.findById(request.materiaId())
-                .orElseThrow(() -> new RuntimeException("Materia no encontrada"));
+                .orElseThrow(() -> new NoSuchElementException("Materia no encontrada"));
 
-        // Evitar duplicados
         boolean yaAsignada = tutor.getMaterias().stream()
                 .anyMatch(m -> m.getId().equals(request.materiaId()));
 
         if (yaAsignada) {
-            throw new RuntimeException("La materia ya está asignada a este tutor");
+            throw new IllegalStateException("La materia ya está asignada a este tutor");
         }
 
         tutor.getMaterias().add(materia);
@@ -69,7 +68,6 @@ public class TutorService {
 
     public TutorResponse retirarMateria(Long tutorId, Long materiaId) {
         Tutor tutor = getTutorOrThrow(tutorId);
-
         tutor.getMaterias().removeIf(m -> m.getId().equals(materiaId));
         return toResponse(tutorRepository.save(tutor));
     }
@@ -94,7 +92,6 @@ public class TutorService {
         return tutorRepository.findAll().stream().map(this::toResponse).toList();
     }
 
-    // Mapeo a response
     public TutorResponse toResponse(Tutor tutor) {
         List<MateriaResponse> materias = tutor.getMaterias().stream()
                 .map(m -> new MateriaResponse(m.getId(), m.getNombre(), m.getCodigo()))
@@ -112,6 +109,10 @@ public class TutorService {
 
     private Tutor getTutorOrThrow(Long id) {
         return tutorRepository.findByIdWithMaterias(id)
+<<<<<<< HEAD
                 .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
+=======
+                .orElseThrow(() -> new NoSuchElementException("Tutor no encontrado"));
+>>>>>>> origin/Develop
     }
 }

@@ -1,18 +1,29 @@
 package com.uco.tutorspace_api.controllers;
 
 import com.uco.tutorspace_api.domain.dto.*;
+import com.uco.tutorspace_api.domain.enums.EstadoSesion;
+import com.uco.tutorspace_api.service.AuditoriaService;
 import com.uco.tutorspace_api.service.MateriaService;
+import com.uco.tutorspace_api.service.ReporteDemandaService;
+import com.uco.tutorspace_api.service.ReporteDesempenoTutorService;
+import com.uco.tutorspace_api.service.ReporteUsoService;
 import com.uco.tutorspace_api.service.TutorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -23,6 +34,46 @@ import java.util.List;
 public class AdminController {
     private final TutorService tutorService;
     private final MateriaService materiaService;
+    private final ReporteDesempenoTutorService reporteDesempenoTutorService;
+
+    // Se inyecta el service de auditoria
+    private final AuditoriaService auditoriaService;
+    private final ReporteDemandaService reporteDemandaService;
+    private final ReporteUsoService reporteUsoService;
+
+    @GetMapping("/auditoria/sesiones")
+    public ResponseEntity<Page<AuditoriaSesionResponse>> auditoria(
+
+            // Filtro: estado nuevo de la sesión
+            @RequestParam(required = false)
+            EstadoSesion estadoNuevo,
+
+            // Filtro: estado anterior de la sesión
+            @RequestParam(required = false)
+            EstadoSesion estadoAnterior,
+
+            // Filtro: nombre o ID del tutor
+            @RequestParam(required = false)
+            String tutor,
+
+            // Filtro: nombre o ID del estudiante
+            @RequestParam(required = false)
+            String estudiante,
+
+            // Parámetros de paginación inyectados automáticamente por Spring
+            Pageable pageable
+    ) {
+        // Delega la lógica de consulta al servicio de auditoría y retorna HTTP 200 con el resultado
+        return ResponseEntity.ok(
+                auditoriaService.obtenerAuditoria(
+                        estadoNuevo,
+                        estadoAnterior,
+                        tutor,
+                        estudiante,
+                        pageable
+                )
+        );
+    }
 
     @Operation(summary = "Registrar tutor", description = "Crea un nuevo tutor en el sistema")
     @PostMapping("/tutores")
@@ -35,6 +86,42 @@ public class AdminController {
     @GetMapping("/tutores")
     public ResponseEntity<List<TutorResponse>> listarTutores() {
         return ResponseEntity.ok(tutorService.listarTutores());
+    }
+
+    @Operation(summary = "Reporte de desempeño de tutores", description = "Obtiene métricas agregadas de sesiones por tutor")
+    @GetMapping("/reportes/tutores")
+    public ResponseEntity<List<ReporteDesempenoTutorResponse>> reporteDesempenoTutores(
+            @RequestParam(required = false) LocalDate fechaInicio,
+            @RequestParam(required = false) LocalDate fechaFin) {
+        return ResponseEntity.ok(reporteDesempenoTutorService.obtenerReporte(fechaInicio, fechaFin));
+    }
+
+    @Operation(summary = "Reporte de oferta y demanda",
+            description = "Devuelve sesiones solicitadas vs tutores activos por materia, con Top 5 mayor y menor demanda")
+    @GetMapping("/reportes/demanda")
+    public ResponseEntity<ReporteDemandaResponse> reporteDemanda(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
+        return ResponseEntity.ok(reporteDemandaService.getReporte(fechaInicio, fechaFin));
+    }
+
+    @Operation(summary = "Reporte de uso por rol",
+            description = "Métricas de uso de la plataforma (usuarios activos, sesiones y mensajes) diferenciadas por rol, con actividad semanal")
+    @GetMapping("/reportes/uso")
+    public ResponseEntity<ReporteUsoResponse> reporteUso(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
+        return ResponseEntity.ok(reporteUsoService.obtenerReporte(fechaInicio, fechaFin));
+    }
+
+    @Operation(summary = "Exportar reporte de demanda a CSV",
+            description = "Descarga el reporte de oferta y demanda como archivo CSV")
+    @GetMapping("/reportes/demanda/exportar")
+    public void exportarDemandaCsv(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin,
+            HttpServletResponse response) throws IOException {
+        reporteDemandaService.generarCsv(fechaInicio, fechaFin, response);
     }
 
     @Operation(summary = "Desactivar tutor", description = "Desactiva un tutor por su ID")
@@ -88,3 +175,4 @@ public class AdminController {
         return ResponseEntity.ok(tutorService.actualizarJornada(id, request.jornadaGeneral()));
     }
 }
+

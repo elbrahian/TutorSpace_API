@@ -13,8 +13,11 @@ import com.uco.tutorspace_api.domain.enums.TipoNotificacion;
 import com.uco.tutorspace_api.repositories.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -136,6 +139,40 @@ public class SesionService {
         return toResponse(actualizada);
     }
 
+    // MNT-12 — zona horaria del negocio (Colombia). Se fija explícitamente para que
+    // la auto-completación no dependa de la zona del servidor (los contenedores suelen
+    // correr en UTC, lo que adelantaría el cierre de las sesiones).
+    private static final ZoneId ZONA = ZoneId.of("America/Bogota");
+
+    /**
+     * MNT-12 — marca como COMPLETADA las sesiones APROBADA cuya hora de fin ya pasó.
+     * Registra el cambio en el historial y notifica al estudiante (igual que el flujo
+     * manual). Devuelve cuántas sesiones se completaron. Lo invoca el scheduler.
+     */
+    @Transactional
+    public int completarSesionesVencidas() {
+        LocalDate hoy = LocalDate.now(ZONA);
+        LocalTime ahora = LocalTime.now(ZONA);
+
+        List<Sesion> vencidas = sesionRepository.findAprobadasVencidas(hoy, ahora);
+
+        for (Sesion sesion : vencidas) {
+            sesion.setEstado(EstadoSesion.COMPLETADA);
+            sesionRepository.save(sesion);
+
+            historialSesionService.registrarCambio(
+                    sesion, EstadoSesion.APROBADA, EstadoSesion.COMPLETADA);
+
+            notificacionService.enviarNotificacion(
+                    sesion.getEstudiante(),
+                    TipoNotificacion.CAMBIO_ESTADO,
+                    "Tu sesión del " + sesion.getFecha() + " finalizó. Ya puedes evaluarla."
+            );
+        }
+
+        return vencidas.size();
+    }
+
     public List<SesionResponse> obtenerPorEstudiante(Long estudianteId) {
         return sesionRepository.findByEstudianteId(estudianteId)
                 .stream().map(this::toResponse).toList();
@@ -155,6 +192,11 @@ public class SesionService {
     }
 
     public SesionResponse toResponse(Sesion s) {
+        // MNT-12 — indica si el estudiante dueño ya evaluó la sesión, para que el
+        // front muestre el botón "Evaluar sesión" solo cuando aún no se ha calificado.
+        boolean calificada = calificacionSesionRepository
+                .existsBySesionIdAndEstudianteId(s.getId(), s.getEstudiante().getId());
+
         return new SesionResponse(
                 s.getId(),
                 s.getTutor().getId(),
@@ -165,7 +207,8 @@ public class SesionService {
                 s.getHoraInicio(),
                 s.getHoraFin(),
                 s.getEstado(),
-                s.getCreatedAt()
+                s.getCreatedAt(),
+                calificada
         );
     }
 }
