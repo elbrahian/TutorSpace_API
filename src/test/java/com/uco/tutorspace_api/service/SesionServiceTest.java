@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -39,6 +40,7 @@ class SesionServiceTest {
     @Mock private DisponibilidadService disponibilidadService;
     @Mock private HistorialSesionService historialSesionService;
     @Mock private NotificacionService notificacionService;
+    @Mock private CalificacionSesionRepository calificacionSesionRepository;
 
     @InjectMocks
     private SesionService sesionService;
@@ -269,5 +271,37 @@ class SesionServiceTest {
         );
 
         assertEquals("No tienes permiso para modificar esta sesión", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("completarSesionesVencidas debe marcar APROBADA vencida como COMPLETADA (MNT-12)")
+    void completarSesionesVencidas_shouldCompleteExpiredAprobadas() {
+        sesionMock.setEstado(EstadoSesion.APROBADA);
+        when(sesionRepository.findAprobadasVencidas(any(), any()))
+                .thenReturn(List.of(sesionMock));
+        when(sesionRepository.save(any(Sesion.class))).thenReturn(sesionMock);
+
+        int completadas = sesionService.completarSesionesVencidas();
+
+        assertEquals(1, completadas);
+        verify(sesionRepository).save(argThat(s -> s.getEstado() == EstadoSesion.COMPLETADA));
+        verify(historialSesionService).registrarCambio(
+                any(), eq(EstadoSesion.APROBADA), eq(EstadoSesion.COMPLETADA));
+        verify(notificacionService).enviarNotificacion(
+                eq(estudianteMock), eq(TipoNotificacion.CAMBIO_ESTADO), anyString());
+    }
+
+    @Test
+    @DisplayName("completarSesionesVencidas sin vencidas no debe tocar nada (MNT-12)")
+    void completarSesionesVencidas_withNone_shouldDoNothing() {
+        when(sesionRepository.findAprobadasVencidas(any(), any()))
+                .thenReturn(List.of());
+
+        int completadas = sesionService.completarSesionesVencidas();
+
+        assertEquals(0, completadas);
+        verify(sesionRepository, never()).save(any());
+        verify(historialSesionService, never()).registrarCambio(any(), any(), any());
+        verify(notificacionService, never()).enviarNotificacion(any(), any(), anyString());
     }
 }
