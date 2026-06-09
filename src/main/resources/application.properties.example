@@ -1,0 +1,5 @@
+# Copia este archivo como application.properties (no se sube a git).
+spring.profiles.active=${SPRING_PROFILES_ACTIVE:local}
+
+jwt.secret=${JWT_SECRET}
+jwt.expiration=${JWT_EXPIRATION:86400000}

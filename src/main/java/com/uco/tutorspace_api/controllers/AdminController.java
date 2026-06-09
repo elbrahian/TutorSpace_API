@@ -6,6 +6,7 @@ import com.uco.tutorspace_api.service.AuditoriaService;
 import com.uco.tutorspace_api.service.MateriaService;
 import com.uco.tutorspace_api.service.ReporteDemandaService;
 import com.uco.tutorspace_api.service.ReporteDesempenoTutorService;
+import com.uco.tutorspace_api.service.ReporteUsoService;
 import com.uco.tutorspace_api.service.TutorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,6 +39,7 @@ public class AdminController {
     // Se inyecta el service de auditoria
     private final AuditoriaService auditoriaService;
     private final ReporteDemandaService reporteDemandaService;
+    private final ReporteUsoService reporteUsoService;
 
     @GetMapping("/auditoria/sesiones")
     public ResponseEntity<Page<AuditoriaSesionResponse>> auditoria(
@@ -101,6 +103,15 @@ public class AdminController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
         return ResponseEntity.ok(reporteDemandaService.getReporte(fechaInicio, fechaFin));
+    }
+
+    @Operation(summary = "Reporte de uso por rol",
+            description = "Métricas de uso de la plataforma (usuarios activos, sesiones y mensajes) diferenciadas por rol, con actividad semanal")
+    @GetMapping("/reportes/uso")
+    public ResponseEntity<ReporteUsoResponse> reporteUso(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
+        return ResponseEntity.ok(reporteUsoService.obtenerReporte(fechaInicio, fechaFin));
     }
 
     @Operation(summary = "Exportar reporte de demanda a CSV",
