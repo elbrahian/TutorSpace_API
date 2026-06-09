@@ -33,6 +33,7 @@ public class SesionService {
     private final HistorialSesionService historialSesionService;
     private final NotificacionService notificacionService;
     private final ChatService chatService; // MNT-05
+    private final CalificacionSesionRepository calificacionSesionRepository; // MNT-12
 
     public SesionResponse crearSesion(Long tutorId, CrearSesionRequest request) {
         Tutor tutor = tutorRepository.findById(tutorId)
