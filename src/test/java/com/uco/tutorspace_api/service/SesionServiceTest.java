@@ -11,6 +11,7 @@ import com.uco.tutorspace_api.domain.enums.EstadoDisponibilidad;
 import com.uco.tutorspace_api.domain.enums.EstadoSesion;
 import com.uco.tutorspace_api.domain.enums.TipoNotificacion;
 import com.uco.tutorspace_api.repositories.*;
+import com.uco.tutorspace_api.service.ChatService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
