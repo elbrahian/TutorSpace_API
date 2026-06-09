@@ -1,0 +1,46 @@
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="cu-m11" name="CU-M11 Casos de Uso">
+    <mxGraphModel dx="900" dy="640" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="640" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="actor" value="Administrador" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#dae8fc;strokeColor=#2563eb;" vertex="1" parent="1">
+          <mxGeometry x="60" y="270" width="50" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="boundary" value="TutorSpace — Reporte de Uso por Rol" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;fillColor=#f8fafc;strokeColor=#94a3b8;fontStyle=1;fontColor=#0f172a;" vertex="1" parent="1">
+          <mxGeometry x="260" y="60" width="560" height="520" as="geometry" />
+        </mxCell>
+        <mxCell id="uc1" value="CU-M11&#10;Consultar reporte de&#10;uso por rol" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#2563eb;fontColor=#0f172a;" vertex="1" parent="1">
+          <mxGeometry x="320" y="270" width="180" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="uc2" value="Filtrar por rango&#10;de fechas" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;fontColor=#0f172a;" vertex="1" parent="1">
+          <mxGeometry x="600" y="110" width="170" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="uc3" value="Filtrar por rol" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;fontColor=#0f172a;" vertex="1" parent="1">
+          <mxGeometry x="600" y="220" width="170" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="uc4" value="Visualizar actividad&#10;semanal por rol" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;fontColor=#0f172a;" vertex="1" parent="1">
+          <mxGeometry x="600" y="330" width="170" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="uc5" value="Exportar reporte&#10;a PDF" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;fontColor=#0f172a;" vertex="1" parent="1">
+          <mxGeometry x="600" y="440" width="170" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="e0" style="endArrow=none;html=1;strokeColor=#334155;" edge="1" parent="1" source="actor" target="uc1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" value="&lt;&lt;include&gt;&gt;" style="endArrow=open;dashed=1;html=1;strokeColor=#64748b;fontColor=#64748b;" edge="1" parent="1" source="uc1" target="uc2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="&lt;&lt;include&gt;&gt;" style="endArrow=open;dashed=1;html=1;strokeColor=#64748b;fontColor=#64748b;" edge="1" parent="1" source="uc1" target="uc3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="&lt;&lt;include&gt;&gt;" style="endArrow=open;dashed=1;html=1;strokeColor=#64748b;fontColor=#64748b;" edge="1" parent="1" source="uc1" target="uc4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="&lt;&lt;extend&gt;&gt;" style="endArrow=open;dashed=1;html=1;strokeColor=#64748b;fontColor=#64748b;" edge="1" parent="1" source="uc5" target="uc1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
