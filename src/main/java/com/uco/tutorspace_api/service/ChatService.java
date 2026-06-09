@@ -76,7 +76,8 @@ public class ChatService {
         Mensaje mensaje = new Mensaje();
         mensaje.setChat(chat);
         mensaje.setEmisor(emisor);
-        mensaje.setContenido(sanitizar(request.contenido()));
+        String contenidoSanitizado = sanitizar(request.contenido());
+        mensaje.setContenido(contenidoSanitizado);
         mensaje.setFecha(LocalDateTime.now());
 
         Mensaje guardado = mensajeRepository.save(mensaje);
@@ -88,7 +89,7 @@ public class ChatService {
         notificacionService.enviarNotificacion(
                 destinatario,
                 TipoNotificacion.NUEVO_MENSAJE,
-                emisor.getNombre() + ": " + request.contenido()
+                emisor.getNombre() + ": " + contenidoSanitizado
         );
 
         return response;

@@ -146,7 +146,7 @@ class AdminControllerIntegrationTest {
                 "nombre": "Nuevo Tutor",
                 "email": "nuevo.tutor@uco.net.co",
                 "password": "password123",
-                "jornadaGeneral": "MAÑANA"
+                "jornadaGeneral": "MANANA"
             }
             """;
 
