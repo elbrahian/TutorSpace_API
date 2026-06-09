@@ -22,10 +22,10 @@ El proyecto TutorSpace API presenta una arquitectura de seguridad generalmente s
 
 ```properties
 # ❌ PROBLEMA: Credenciales expuestas
-spring.datasource.url=jdbc:postgresql://tutorspace-brahianrueda123-cd6c.i.aivencloud.com:22148/defaultdb?sslmode=require
-spring.datasource.username=avnadmin
-spring.datasource.password=AVNS_BHZV7ZiWT2ncOAZP37D
-jwt.secret=dHV0b3JzcGFjZV9qd3Rfc2VjcmV0X2tleV8yMDI0X3Vjbw==
+spring.datasource.url=${SPRING_DATASOURCE_URL}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD}
+jwt.secret=${JWT_SECRET}
 ```
 
 **Riesgo:** Exposición de credenciales de base de datos y clave JWT en el repositorio.
