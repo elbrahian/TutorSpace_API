@@ -4,6 +4,7 @@ import com.uco.tutorspace_api.domain.dto.*;
 import com.uco.tutorspace_api.domain.enums.EstadoSesion;
 import com.uco.tutorspace_api.service.AuditoriaService;
 import com.uco.tutorspace_api.service.MateriaService;
+import com.uco.tutorspace_api.service.ReporteCalificacionTutorService;
 import com.uco.tutorspace_api.service.ReporteDemandaService;
 import com.uco.tutorspace_api.service.ReporteDesempenoTutorService;
 import com.uco.tutorspace_api.service.ReporteUsoService;
@@ -41,6 +42,7 @@ public class AdminController {
     private final AuditoriaService auditoriaService;
     private final ReporteDemandaService reporteDemandaService;
     private final ReporteUsoService reporteUsoService;
+    private final ReporteCalificacionTutorService reporteCalificacionTutorService;
 
     @GetMapping("/auditoria/sesiones")
     public ResponseEntity<Page<AuditoriaSesionResponse>> auditoria(
@@ -113,6 +115,15 @@ public class AdminController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
         return ResponseEntity.ok(reporteUsoService.obtenerReporte(fechaInicio, fechaFin));
+    }
+
+    @Operation(summary = "Reporte de calificación de tutores",
+            description = "Ranking de tutores por calificación promedio, distribución de estrellas y comentarios de estudiantes")
+    @GetMapping("/reportes/calificaciones")
+    public ResponseEntity<List<ReporteCalificacionTutorResponse>> reporteCalificaciones(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
+        return ResponseEntity.ok(reporteCalificacionTutorService.obtenerReporte(fechaInicio, fechaFin));
     }
 
     @Operation(summary = "Exportar reporte de demanda a CSV",
