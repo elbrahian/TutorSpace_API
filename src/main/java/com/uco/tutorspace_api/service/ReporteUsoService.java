@@ -3,9 +3,11 @@ package com.uco.tutorspace_api.service;
 import com.uco.tutorspace_api.domain.dto.ActividadSemanalResponse;
 import com.uco.tutorspace_api.domain.dto.ReporteUsoResponse;
 import com.uco.tutorspace_api.domain.dto.UsoPorRolResponse;
+import com.uco.tutorspace_api.domain.enums.EstadoUsuario;
 import com.uco.tutorspace_api.domain.enums.RolUsuario;
 import com.uco.tutorspace_api.repositories.MensajeRepository;
 import com.uco.tutorspace_api.repositories.SesionRepository;
+import com.uco.tutorspace_api.repositories.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -38,6 +40,7 @@ public class ReporteUsoService {
 
     private final SesionRepository sesionRepository;
     private final MensajeRepository mensajeRepository;
+    private final UsuarioRepository usuarioRepository;
 
     private static final DateTimeFormatter ETIQUETA_SEMANA = DateTimeFormatter.ofPattern("dd/MM");
     private static final int MAX_SEMANAS = 12;
@@ -60,7 +63,12 @@ public class ReporteUsoService {
 
         Set<Long> estudiantesActivos = new HashSet<>();
         Set<Long> tutoresActivos = new HashSet<>();
-        Set<Long> adminsActivos = new HashSet<>();
+
+        // A diferencia de estudiantes y tutores, los administradores no participan
+        // en sesiones ni necesariamente envían mensajes; su "uso" es la gestión de la
+        // plataforma. Para que el rol no aparezca siempre en 0, se reportan los
+        // administradores ACTIVOS registrados en el sistema.
+        long adminsActivos = usuarioRepository.countByRolAndEstado(RolUsuario.ADMIN, EstadoUsuario.ACTIVO);
 
         long mensajesEstudiante = 0;
         long mensajesTutor = 0;
@@ -100,7 +108,6 @@ public class ReporteUsoService {
                     acciones[1]++;
                 }
                 case ADMIN -> {
-                    adminsActivos.add(emisorId);
                     mensajesAdmin++;
                     acciones[2]++;
                 }
@@ -112,7 +119,7 @@ public class ReporteUsoService {
         List<UsoPorRolResponse> metricasPorRol = List.of(
                 new UsoPorRolResponse("ESTUDIANTE", estudiantesActivos.size(), totalSesiones, mensajesEstudiante),
                 new UsoPorRolResponse("TUTOR", tutoresActivos.size(), totalSesiones, mensajesTutor),
-                new UsoPorRolResponse("ADMIN", adminsActivos.size(), 0, mensajesAdmin)
+                new UsoPorRolResponse("ADMIN", adminsActivos, 0, mensajesAdmin)
         );
 
         List<ActividadSemanalResponse> actividadSemanal = new ArrayList<>();
@@ -134,7 +141,7 @@ public class ReporteUsoService {
         return new ReporteUsoResponse(
                 estudiantesActivos.size(),
                 tutoresActivos.size(),
-                adminsActivos.size(),
+                adminsActivos,
                 totalSesiones,
                 mensajesEstudiante + mensajesTutor + mensajesAdmin,
                 metricasPorRol,

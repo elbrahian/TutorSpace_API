@@ -136,7 +136,8 @@ class ReporteUsoServiceTest {
         // Usuarios activos
         assertEquals(1, r.estudiantesActivos());
         assertEquals(1, r.tutoresActivos());
-        assertEquals(1, r.adminsActivos());
+        assertEquals(1, r.adminsActivos()); // 1 administrador ACTIVO registrado
+        assertEquals(1, metrica(r, "ADMIN").usuariosActivos());
 
         // Totales
         assertEquals(2, r.totalSesionesCreadas());
@@ -154,16 +155,19 @@ class ReporteUsoServiceTest {
     @Test
     @DisplayName("El rango de fechas filtra la actividad fuera de él")
     void obtenerReporte_conRango_filtra() {
-        // Solo la semana A (04 al 07 de mayo): 1 sesión, 3 mensajes (2 estudiante + 1 tutor), 0 admin
+        // Solo la semana A (04 al 07 de mayo): 1 sesión, 3 mensajes (2 estudiante + 1 tutor)
         ReporteUsoResponse r = reporteUsoService.obtenerReporte(
                 LocalDate.of(2026, 5, 4), LocalDate.of(2026, 5, 7));
 
         assertEquals(1, r.totalSesionesCreadas());
         assertEquals(3, r.totalMensajesEnviados());
-        assertEquals(0, r.adminsActivos()); // el admin envió su mensaje en la semana B
         assertEquals(2, metrica(r, "ESTUDIANTE").mensajesEnviados());
         assertEquals(1, metrica(r, "TUTOR").mensajesEnviados());
+        // Los mensajes del admin SÍ dependen del rango: su mensaje fue en la semana B
         assertEquals(0, metrica(r, "ADMIN").mensajesEnviados());
+        // Los administradores activos son los registrados, no dependen del rango
+        assertEquals(1, r.adminsActivos());
+        assertEquals(1, metrica(r, "ADMIN").usuariosActivos());
         assertEquals(1, r.actividadSemanal().size());
     }
 
@@ -176,6 +180,8 @@ class ReporteUsoServiceTest {
         assertEquals(0, r.totalSesionesCreadas());
         assertEquals(0, r.totalMensajesEnviados());
         assertEquals(3, r.metricasPorRol().size()); // siempre los 3 roles
+        // Aun sin actividad en el rango, el admin registrado se reporta como activo
+        assertEquals(1, metrica(r, "ADMIN").usuariosActivos());
         assertTrue(r.actividadSemanal().isEmpty());
     }
 }
