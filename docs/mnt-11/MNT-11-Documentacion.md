@@ -98,11 +98,18 @@ colaborativa del repositorio:
 
 ### Definición de las métricas
 
-- **Usuarios activos por rol:** IDs distintos de usuarios de ese rol con **al menos una acción**
-  (una sesión o un mensaje) dentro del período (RN-02).
+- **Usuarios activos por rol:**
+  - **Estudiante / Tutor:** IDs distintos de usuarios de ese rol con **al menos una acción**
+    (una sesión o un mensaje) dentro del período (RN-02).
+  - **Administrador:** los administradores **ACTIVOS registrados** en el sistema. El admin no
+    participa en sesiones ni necesariamente envía mensajes (su "uso" es la gestión de la
+    plataforma), por lo que reconstruir su actividad desde sesiones/mensajes lo dejaba casi
+    siempre en 0. Por eso este valor refleja la presencia real de administradores y **no**
+    depende del rango de fechas.
 - **Sesiones:** sesiones en las que el rol participa (el estudiante la solicita, el tutor la atiende).
   Para ADMIN es 0 por definición del dominio.
-- **Mensajes enviados:** mensajes cuyo emisor tiene ese rol.
+- **Mensajes enviados:** mensajes cuyo emisor tiene ese rol. Para ADMIN **sí** depende del
+  rango (cuenta solo los mensajes enviados por administradores dentro del período).
 - **Actividad semanal:** acciones agregadas por semana (lunes que la inicia), una serie por rol.
   Se limita a las **12 semanas más recientes** del conjunto resultante.
 
@@ -127,6 +134,7 @@ devolvía `0` en todas las métricas.
 | `service/ReporteUsoService.java` | nuevo |
 | `repositories/SesionRepository.java` | + `findActividadSesiones()` |
 | `repositories/MensajeRepository.java` | + `findActividadMensajes()` |
+| `repositories/UsuarioRepository.java` | + `countByRolAndEstado()` (admins activos) |
 | `controllers/AdminController.java` | + endpoint `GET /admin/reportes/uso` |
 
 ### Frontend — `TutorSpace_APP`
