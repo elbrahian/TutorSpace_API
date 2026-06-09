@@ -1,6 +1,8 @@
 package com.uco.tutorspace_api.config;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.web.header.writers.StaticHeadersWriter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -35,6 +37,14 @@ public class SecurityConfig {
         return http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
+                .headers(headers -> headers
+                        .contentSecurityPolicy(csp -> csp
+                                .policyDirectives("default-src 'self'; frame-ancestors 'none'"))
+                        .frameOptions(frame -> frame.deny())
+                        .contentTypeOptions(Customizer.withDefaults())
+                        .addHeaderWriter(new StaticHeadersWriter("Permissions-Policy",
+                                "camera=(), microphone=(), geolocation=()"))
+                )
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authProvider())
                 .authorizeHttpRequests(auth -> auth

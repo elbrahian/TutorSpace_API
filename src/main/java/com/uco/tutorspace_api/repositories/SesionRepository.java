@@ -1,8 +1,6 @@
 package com.uco.tutorspace_api.repositories;
 
 import com.uco.tutorspace_api.domain.Sesion;
-import com.uco.tutorspace_api.domain.enums.EstadoSesion;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
