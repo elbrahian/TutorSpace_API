@@ -1,0 +1,40 @@
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="seq-m11" name="MNT-11 Secuencia">
+    <mxGraphModel dx="1200" dy="700" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1560" pageHeight="720" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="h1" value="Administrador" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#2563eb;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="40" y="40" width="160" height="40" as="geometry" /></mxCell>
+        <mxCell id="h2" value="ReporteUsoPorRol (UI)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e2e8f0;strokeColor=#475569;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="240" y="40" width="160" height="40" as="geometry" /></mxCell>
+        <mxCell id="h3" value="reportesApi" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e2e8f0;strokeColor=#475569;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="460" y="40" width="160" height="40" as="geometry" /></mxCell>
+        <mxCell id="h4" value="AdminController" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dcfce7;strokeColor=#16a34a;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="680" y="40" width="160" height="40" as="geometry" /></mxCell>
+        <mxCell id="h5" value="ReporteUsoService" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dcfce7;strokeColor=#16a34a;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="900" y="40" width="160" height="40" as="geometry" /></mxCell>
+        <mxCell id="h6" value="Sesion/Mensaje Repository" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dcfce7;strokeColor=#16a34a;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1120" y="40" width="160" height="40" as="geometry" /></mxCell>
+        <mxCell id="h7" value="PostgreSQL" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fef9c3;strokeColor=#ca8a04;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1340" y="40" width="160" height="40" as="geometry" /></mxCell>
+
+        <mxCell id="l1" style="endArrow=none;dashed=1;html=1;strokeColor=#94a3b8;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="120" y="80" as="sourcePoint" /><mxPoint x="120" y="660" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="l2" style="endArrow=none;dashed=1;html=1;strokeColor=#94a3b8;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="320" y="80" as="sourcePoint" /><mxPoint x="320" y="660" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="l3" style="endArrow=none;dashed=1;html=1;strokeColor=#94a3b8;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="540" y="80" as="sourcePoint" /><mxPoint x="540" y="660" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="l4" style="endArrow=none;dashed=1;html=1;strokeColor=#94a3b8;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="760" y="80" as="sourcePoint" /><mxPoint x="760" y="660" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="l5" style="endArrow=none;dashed=1;html=1;strokeColor=#94a3b8;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="980" y="80" as="sourcePoint" /><mxPoint x="980" y="660" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="l6" style="endArrow=none;dashed=1;html=1;strokeColor=#94a3b8;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="1200" y="80" as="sourcePoint" /><mxPoint x="1200" y="660" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="l7" style="endArrow=none;dashed=1;html=1;strokeColor=#94a3b8;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="1420" y="80" as="sourcePoint" /><mxPoint x="1420" y="660" as="targetPoint" /></mxGeometry></mxCell>
+
+        <mxCell id="m1" value="1. Abre &quot;Reportes &gt; Uso por Rol&quot;" style="endArrow=block;html=1;strokeColor=#0f172a;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="120" y="120" as="sourcePoint" /><mxPoint x="320" y="120" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="m2" value="2. getUsoPorRol(fechaInicio, fechaFin)" style="endArrow=block;html=1;strokeColor=#0f172a;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="320" y="160" as="sourcePoint" /><mxPoint x="540" y="160" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="m3" value="3. GET /admin/reportes/uso (JWT ADMIN)" style="endArrow=block;html=1;strokeColor=#0f172a;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="540" y="200" as="sourcePoint" /><mxPoint x="760" y="200" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="m4" value="4. obtenerReporte(fechas)" style="endArrow=block;html=1;strokeColor=#0f172a;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="760" y="240" as="sourcePoint" /><mxPoint x="980" y="240" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="m5" value="5. findActividadSesiones() / findActividadMensajes()" style="endArrow=block;html=1;strokeColor=#0f172a;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="980" y="280" as="sourcePoint" /><mxPoint x="1200" y="280" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="m6" value="6. SELECT proyectado por rango" style="endArrow=block;html=1;strokeColor=#0f172a;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="1200" y="320" as="sourcePoint" /><mxPoint x="1420" y="320" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="m7" value="7. filas [fecha, usuarioId, rol]" style="endArrow=open;dashed=1;html=1;strokeColor=#475569;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="1420" y="360" as="sourcePoint" /><mxPoint x="1200" y="360" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="note" value="8. Agrega: usuarios activos (IDs distintos),&#10;sesiones, mensajes y actividad semanal por rol" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1f5f9;strokeColor=#94a3b8;fontSize=10;align=left;" vertex="1" parent="1"><mxGeometry x="900" y="385" width="300" height="50" as="geometry" /></mxCell>
+        <mxCell id="m9" value="9. ReporteUsoResponse" style="endArrow=open;dashed=1;html=1;strokeColor=#475569;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="980" y="455" as="sourcePoint" /><mxPoint x="760" y="455" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="m10" value="10. 200 OK (JSON)" style="endArrow=open;dashed=1;html=1;strokeColor=#475569;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="760" y="495" as="sourcePoint" /><mxPoint x="320" y="495" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="m11" value="11. Render: tarjetas + gráfico SVG + tabla" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#2563eb;fontSize=10;" vertex="1" parent="1"><mxGeometry x="220" y="520" width="240" height="40" as="geometry" /></mxCell>
+        <mxCell id="m12" value="12. Exportar PDF" style="endArrow=block;html=1;strokeColor=#0f172a;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="120" y="595" as="sourcePoint" /><mxPoint x="320" y="595" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="m13" value="13. exportarReportePdf() → descarga PDF" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#2563eb;fontSize=10;" vertex="1" parent="1"><mxGeometry x="220" y="615" width="260" height="40" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
