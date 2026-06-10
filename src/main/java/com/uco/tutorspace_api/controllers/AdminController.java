@@ -16,6 +16,8 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -60,7 +62,18 @@ public class AdminController {
             @RequestParam(required = false)
             String estudiante,
 
+            @RequestParam(required = false)
+            LocalDate fechaInicio,
+
+            @RequestParam(required = false)
+            LocalDate fechaFin,
+
             // Parámetros de paginación inyectados automáticamente por Spring
+            @PageableDefault(
+                    size = 10,
+                    sort = "fechaCambio",
+                    direction = Sort.Direction.DESC
+            )
             Pageable pageable
     ) {
         // Delega la lógica de consulta al servicio de auditoría y retorna HTTP 200 con el resultado
@@ -70,6 +83,8 @@ public class AdminController {
                         estadoAnterior,
                         tutor,
                         estudiante,
+                        fechaInicio,
+                        fechaFin,
                         pageable
                 )
         );

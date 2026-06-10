@@ -11,6 +11,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 /**
  * Servicio encargado de la lógica de negocio para la consulta de auditoría de sesiones.
  */
@@ -30,8 +33,21 @@ public class AuditoriaService {
             EstadoSesion estadoAnterior,
             String tutor,
             String estudiante,
+            LocalDate fechaInicio,
+            LocalDate fechaFin,
             Pageable pageable
     ) {
+
+        LocalDateTime inicio = null;
+        LocalDateTime fin = null;
+
+        if (fechaInicio != null) {
+            inicio = fechaInicio.atStartOfDay();
+        }
+
+        if (fechaFin != null) {
+            fin = fechaFin.atTime(23, 59, 59);
+        }
         // Se compone la especificación combinando cada filtro con AND.
         // Los filtros con valor null son ignorados automáticamente por Spring Data.
         Specification<HistorialSesion> spec =
@@ -40,7 +56,11 @@ public class AuditoriaService {
                         )
                         .and(HistorialSesionSpecification.estadoAnterior(estadoAnterior))
                         .and(HistorialSesionSpecification.tutor(tutor))
-                        .and(HistorialSesionSpecification.estudiante(estudiante));
+                        .and(HistorialSesionSpecification.estudiante(estudiante))
+                        .and(HistorialSesionSpecification.fechaEntre(
+                                inicio,
+                                fin
+                        ));
 
         // Se ejecuta la consulta paginada y se proyecta cada entidad
         // HistorialSesion al DTO de respuesta AuditoriaSesionResponse
