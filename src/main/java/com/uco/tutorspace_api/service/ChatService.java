@@ -28,6 +28,7 @@ public class ChatService {
     private final NotificacionService notificacionService;
     private final SimpMessagingTemplate messagingTemplate;
 
+    // Retorna el chat existente o crea uno nuevo si no existe
     public ChatResponse iniciarChat(Long estudianteId, IniciarChatRequest request) {
         if (chatRepository.existsByTutorIdAndEstudianteId(request.tutorId(), estudianteId)) {
             Chat existente = chatRepository
@@ -58,6 +59,7 @@ public class ChatService {
         return toResponse(guardado);
     }
 
+    // Valida acceso, sanitiza contenido y hace broadcast por WebSocket
     public MensajeResponse enviarMensaje(Long chatId, Long emisorId,
                                          EnviarMensajeRequest request) {
         Chat chat = chatRepository.findById(chatId)
@@ -76,9 +78,9 @@ public class ChatService {
         Mensaje mensaje = new Mensaje();
         mensaje.setChat(chat);
         mensaje.setEmisor(emisor);
-        String contenidoSanitizado = sanitizar(request.contenido());
-        mensaje.setContenido(contenidoSanitizado);
+        mensaje.setContenido(sanitizar(request.contenido()));
         mensaje.setFecha(LocalDateTime.now());
+        mensaje.setEsSistema(false);
 
         Mensaje guardado = mensajeRepository.save(mensaje);
         MensajeResponse response = toMensajeResponse(guardado);
@@ -89,8 +91,54 @@ public class ChatService {
         notificacionService.enviarNotificacion(
                 destinatario,
                 TipoNotificacion.NUEVO_MENSAJE,
-                emisor.getNombre() + ": " + contenidoSanitizado
+                emisor.getNombre() + ": " + request.contenido()
         );
+
+        return response;
+    }
+
+    /**
+     * MNT-05 — Envía un mensaje automático del sistema al chat tutor-estudiante.
+     * Si el chat no existe, lo crea. El emisor queda en null y esSistema = true.
+     */
+    public MensajeResponse enviarMensajeSistema(Long tutorId, Long estudianteId,
+                                                String contenido) {
+        Chat chat;
+        if (chatRepository.existsByTutorIdAndEstudianteId(tutorId, estudianteId)) {
+            chat = chatRepository.findByTutorIdAndEstudianteId(tutorId, estudianteId)
+                    .orElseThrow(() -> new NoSuchElementException("Chat no encontrado"));
+        } else {
+            Tutor tutor = tutorRepository.findById(tutorId)
+                    .orElseThrow(() -> new NoSuchElementException("Tutor no encontrado"));
+            Estudiante estudiante = estudianteRepository.findById(estudianteId)
+                    .orElseThrow(() -> new NoSuchElementException("Estudiante no encontrado"));
+
+            Chat nuevoChat = new Chat();
+            nuevoChat.setTutor(tutor);
+            nuevoChat.setEstudiante(estudiante);
+            nuevoChat.setFechaCreacion(LocalDateTime.now());
+            chat = chatRepository.save(nuevoChat);
+        }
+
+        Mensaje mensaje = new Mensaje();
+        mensaje.setChat(chat);
+        mensaje.setEmisor(null); // null = mensaje del sistema
+        mensaje.setContenido(contenido);
+        mensaje.setFecha(LocalDateTime.now());
+        mensaje.setEsSistema(true);
+
+        Mensaje guardado = mensajeRepository.save(mensaje);
+
+        MensajeResponse response = new MensajeResponse(
+                guardado.getId(),
+                null,
+                "Sistema",
+                guardado.getContenido(),
+                guardado.getFecha(),
+                true
+        );
+
+        messagingTemplate.convertAndSend("/topic/chat/" + chat.getId(), response);
 
         return response;
     }
@@ -129,16 +177,19 @@ public class ChatService {
         );
     }
 
+    // emisor null = mensaje del sistema; nombre se reemplaza por "Sistema"
     public MensajeResponse toMensajeResponse(Mensaje m) {
         return new MensajeResponse(
                 m.getId(),
-                m.getEmisor().getId(),
-                m.getEmisor().getNombre(),
+                m.getEmisor() != null ? m.getEmisor().getId() : null,
+                m.getEmisor() != null ? m.getEmisor().getNombre() : "Sistema",
                 m.getContenido(),
-                m.getFecha()
+                m.getFecha(),
+                m.isEsSistema()
         );
     }
 
+    // Previene XSS escapando caracteres HTML peligrosos
     private String sanitizar(String contenido) {
         if (contenido == null) return "";
         return contenido

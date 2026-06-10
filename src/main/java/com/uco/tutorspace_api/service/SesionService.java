@@ -32,7 +32,8 @@ public class SesionService {
     private final DisponibilidadService disponibilidadService;
     private final HistorialSesionService historialSesionService;
     private final NotificacionService notificacionService;
-    private final CalificacionSesionRepository calificacionSesionRepository;
+    private final ChatService chatService; // MNT-05
+    private final CalificacionSesionRepository calificacionSesionRepository; // MNT-12
 
     public SesionResponse crearSesion(Long tutorId, CrearSesionRequest request) {
         Tutor tutor = tutorRepository.findById(tutorId)
@@ -79,6 +80,15 @@ public class SesionService {
                 "El tutor " + tutor.getNombre() + " agendó una sesión contigo el " + request.fecha()
         );
 
+        // MNT-05 — mensaje automático al crear sesión
+        chatService.enviarMensajeSistema(
+                tutor.getId(),
+                estudiante.getId(),
+                "Se agendó una sesión para el " + request.fecha()
+                        + " de " + request.horaInicio()
+                        + " a " + request.horaFin()
+        );
+
         return toResponse(guardada);
     }
 
@@ -94,9 +104,6 @@ public class SesionService {
         EstadoSesion estadoAnterior = sesion.getEstado();
         EstadoSesion estadoNuevo = request.nuevoEstado();
 
-        // MNT-12 — una sesión solo puede marcarse COMPLETADA si estaba APROBADA.
-        // Así el flujo hacia COMPLETADA (estado requerido para poder evaluar) es claro
-        // y no se completan sesiones PENDIENTES o CANCELADAS por error.
         if (estadoNuevo == EstadoSesion.COMPLETADA
                 && estadoAnterior != EstadoSesion.APROBADA) {
             throw new IllegalStateException("Solo se puede completar una sesión que esté APROBADA");
@@ -115,6 +122,19 @@ public class SesionService {
                 sesion.getEstudiante(),
                 TipoNotificacion.CAMBIO_ESTADO,
                 "Tu sesión del " + sesion.getFecha() + " cambió a estado: " + estadoNuevo
+        );
+
+        // MNT-05 — mensaje automático al cambiar estado
+        String textoMensaje = switch (estadoNuevo) {
+            case APROBADA  -> "La sesión del " + sesion.getFecha() + " fue aprobada por el tutor";
+            case CANCELADA -> "La sesión del " + sesion.getFecha() + " fue cancelada";
+            default        -> "La sesión del " + sesion.getFecha() + " cambió a estado: " + estadoNuevo;
+        };
+
+        chatService.enviarMensajeSistema(
+                sesion.getTutor().getId(),
+                sesion.getEstudiante().getId(),
+                textoMensaje
         );
 
         return toResponse(actualizada);
