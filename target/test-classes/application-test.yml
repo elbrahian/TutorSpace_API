@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: TutorSpace_API_test
+
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+  h2:
+    console:
+      enabled: false
+
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration
+
+  flyway:
+    enabled: false
+
+  liquibase:
+    enabled: false
+
+jwt:
+  secret: dHV0b3JzcGFjZV9qd3Rfc2VjcmV0X2tleV8yMDI0X3Vjb190ZXN0
+  expiration: 86400000
+
+logging:
+  level:
+    org.springframework.security: WARN
