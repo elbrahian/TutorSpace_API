@@ -11,16 +11,19 @@ import java.time.LocalDateTime;
 @Table(name = "mensajes")
 @Getter @Setter @NoArgsConstructor
 public class Mensaje {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Chat al que pertenece el mensaje
     @ManyToOne
     @JoinColumn(name = "chat_id", nullable = false)
     private Chat chat;
 
+    // null cuando el mensaje es del sistema (MNT-05)
     @ManyToOne
-    @JoinColumn(name = "emisor_id", nullable = false)
+    @JoinColumn(name = "emisor_id", nullable = true)
     private Usuario emisor;
 
     @Column(nullable = false, length = 500)
@@ -29,4 +32,7 @@ public class Mensaje {
     @Column(nullable = false)
     private LocalDateTime fecha = LocalDateTime.now();
 
+    // true = mensaje automático del sistema, no editable ni eliminable
+    @Column(nullable = false)
+    private boolean esSistema = false;
 }
