@@ -28,12 +28,14 @@ public interface SesionRepository extends JpaRepository<Sesion, Long> {
                                        @Param("ahora") LocalTime ahora);
 
     @Query("""
-            SELECT s FROM Sesion s
+            SELECT s.tutor.id, s.estado, COUNT(s.id)
+            FROM Sesion s
             WHERE s.tutor.id IN :tutorIds
-            AND (:fechaInicio IS NULL OR s.fecha >= :fechaInicio)
-            AND (:fechaFin IS NULL OR s.fecha <= :fechaFin)
+            AND s.fecha >= :fechaInicio
+            AND s.fecha <= :fechaFin
+            GROUP BY s.tutor.id, s.estado
             """)
-    List<Sesion> findByTutorIdsAndRango(
+    List<Object[]> countSesionesPorTutorYEstado(
             @Param("tutorIds") List<Long> tutorIds,
             @Param("fechaInicio") LocalDate fechaInicio,
             @Param("fechaFin") LocalDate fechaFin
