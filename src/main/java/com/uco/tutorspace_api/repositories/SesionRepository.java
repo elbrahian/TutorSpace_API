@@ -1,6 +1,9 @@
 package com.uco.tutorspace_api.repositories;
 
 import com.uco.tutorspace_api.domain.Sesion;
+import com.uco.tutorspace_api.domain.enums.EstadoSesion;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,8 +13,11 @@ import java.time.LocalTime;
 import java.util.List;
 
 public interface SesionRepository extends JpaRepository<Sesion, Long> {
+
     List<Sesion> findByTutorId(Long id);
+
     List<Sesion> findByEstudianteId(Long id);
+
     List<Sesion> findByEstudianteIdAndFechaBetween(Long estudianteId, LocalDate inicio, LocalDate fin);
 
     /**
@@ -26,6 +32,18 @@ public interface SesionRepository extends JpaRepository<Sesion, Long> {
             """)
     List<Sesion> findAprobadasVencidas(@Param("hoy") LocalDate hoy,
                                        @Param("ahora") LocalTime ahora);
+
+    @Query("""
+            SELECT s FROM Sesion s
+            WHERE s.tutor.id IN :tutorIds
+            AND (:fechaInicio IS NULL OR s.fecha >= :fechaInicio)
+            AND (:fechaFin IS NULL OR s.fecha <= :fechaFin)
+            """)
+    List<Sesion> findByTutorIdsAndRango(
+            @Param("tutorIds") List<Long> tutorIds,
+            @Param("fechaInicio") LocalDate fechaInicio,
+            @Param("fechaFin") LocalDate fechaFin
+    );
 
     @Query("""
             SELECT s.tutor.id, s.estado, COUNT(s.id)
@@ -72,5 +90,20 @@ public interface SesionRepository extends JpaRepository<Sesion, Long> {
     List<Object[]> findActividadSesiones(
             @Param("fechaInicio") LocalDate fechaInicio,
             @Param("fechaFin") LocalDate fechaFin
+    );
+
+    @Query("""
+    SELECT s FROM Sesion s
+    WHERE s.tutor.id = :tutorId
+      AND (CAST(:estado AS string) IS NULL OR s.estado = :estado)
+      AND (:fechaInicio IS NULL OR s.fecha >= :fechaInicio)
+      AND (:fechaFin IS NULL OR s.fecha <= :fechaFin)
+    """)
+    Page<Sesion> findByTutorIdWithFilters(
+            @Param("tutorId") Long tutorId,
+            @Param("estado") EstadoSesion estado,
+            @Param("fechaInicio") LocalDate fechaInicio,
+            @Param("fechaFin") LocalDate fechaFin,
+            Pageable pageable
     );
 }

@@ -1,13 +1,2 @@
-# Claude
-.claude/
-
-# Properties locales
-src/main/resources/application.properties
 src/main/resources/application-local.properties
-application-local.properties
-
-# IntelliJ IDEA
-.idea/
-
-# Build
-target/
+src/main/resources/application.properties
