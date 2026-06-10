@@ -9,6 +9,26 @@ public class TutorPromotionRepository {
     @PersistenceContext
     private EntityManager entityManager;
 
+    public void eliminarChatsUsuario(Long usuarioId) {
+        entityManager.createNativeQuery("""
+                DELETE FROM mensajes
+                WHERE chat_id IN (
+                    SELECT id
+                    FROM chats
+                    WHERE tutor_id = ?1 OR estudiante_id = ?1
+                )
+                """)
+                .setParameter(1, usuarioId)
+                .executeUpdate();
+
+        entityManager.createNativeQuery("""
+                DELETE FROM chats
+                WHERE tutor_id = ?1 OR estudiante_id = ?1
+                """)
+                .setParameter(1, usuarioId)
+                .executeUpdate();
+    }
+
     public void promoverUsuarioATutor(Long usuarioId) {
         entityManager.createNativeQuery("""
                 INSERT INTO tutores (id, jornada_general)

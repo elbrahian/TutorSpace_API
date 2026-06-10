@@ -115,6 +115,7 @@ public class SolicitudTutorService {
 
         if (request.nuevoEstado() == EstadoSolicitudTutor.APROBADA) {
             Long solicitanteId = solicitud.getSolicitante().getId();
+            tutorPromotionRepository.eliminarChatsUsuario(solicitanteId);
             tutorPromotionRepository.promoverUsuarioATutor(solicitanteId);
             tutorPromotionRepository.asignarMateriasSolicitadas(solicitanteId, solicitud.getId());
         }
