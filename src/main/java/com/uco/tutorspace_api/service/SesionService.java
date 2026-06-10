@@ -15,6 +15,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -29,6 +31,8 @@ public class SesionService {
     private final DisponibilidadService disponibilidadService;
     private final HistorialSesionService historialSesionService;
     private final NotificacionService notificacionService;
+    private final ChatService chatService; // MNT-05
+    private final CalificacionSesionRepository calificacionSesionRepository; // MNT-12
 
     public SesionResponse crearSesion(Long tutorId, CrearSesionRequest request) {
         Tutor tutor = tutorRepository.findById(tutorId)
@@ -75,6 +79,15 @@ public class SesionService {
                 "El tutor " + tutor.getNombre() + " agendó una sesión contigo el " + request.fecha()
         );
 
+        // MNT-05 — mensaje automático al crear sesión
+        chatService.enviarMensajeSistema(
+                tutor.getId(),
+                estudiante.getId(),
+                "Se agendó una sesión para el " + request.fecha()
+                        + " de " + request.horaInicio()
+                        + " a " + request.horaFin()
+        );
+
         return toResponse(guardada);
     }
 
@@ -90,9 +103,6 @@ public class SesionService {
         EstadoSesion estadoAnterior = sesion.getEstado();
         EstadoSesion estadoNuevo = request.nuevoEstado();
 
-        // MNT-12 — una sesión solo puede marcarse COMPLETADA si estaba APROBADA.
-        // Así el flujo hacia COMPLETADA (estado requerido para poder evaluar) es claro
-        // y no se completan sesiones PENDIENTES o CANCELADAS por error.
         if (estadoNuevo == EstadoSesion.COMPLETADA
                 && estadoAnterior != EstadoSesion.APROBADA) {
             throw new IllegalStateException("Solo se puede completar una sesión que esté APROBADA");
@@ -113,7 +123,54 @@ public class SesionService {
                 "Tu sesión del " + sesion.getFecha() + " cambió a estado: " + estadoNuevo
         );
 
+        // MNT-05 — mensaje automático al cambiar estado
+        String textoMensaje = switch (estadoNuevo) {
+            case APROBADA  -> "La sesión del " + sesion.getFecha() + " fue aprobada por el tutor";
+            case CANCELADA -> "La sesión del " + sesion.getFecha() + " fue cancelada";
+            default        -> "La sesión del " + sesion.getFecha() + " cambió a estado: " + estadoNuevo;
+        };
+
+        chatService.enviarMensajeSistema(
+                sesion.getTutor().getId(),
+                sesion.getEstudiante().getId(),
+                textoMensaje
+        );
+
         return toResponse(actualizada);
+    }
+
+    // MNT-12 — zona horaria del negocio (Colombia). Se fija explícitamente para que
+    // la auto-completación no dependa de la zona del servidor (los contenedores suelen
+    // correr en UTC, lo que adelantaría el cierre de las sesiones).
+    private static final ZoneId ZONA = ZoneId.of("America/Bogota");
+
+    /**
+     * MNT-12 — marca como COMPLETADA las sesiones APROBADA cuya hora de fin ya pasó.
+     * Registra el cambio en el historial y notifica al estudiante (igual que el flujo
+     * manual). Devuelve cuántas sesiones se completaron. Lo invoca el scheduler.
+     */
+    @Transactional
+    public int completarSesionesVencidas() {
+        LocalDate hoy = LocalDate.now(ZONA);
+        LocalTime ahora = LocalTime.now(ZONA);
+
+        List<Sesion> vencidas = sesionRepository.findAprobadasVencidas(hoy, ahora);
+
+        for (Sesion sesion : vencidas) {
+            sesion.setEstado(EstadoSesion.COMPLETADA);
+            sesionRepository.save(sesion);
+
+            historialSesionService.registrarCambio(
+                    sesion, EstadoSesion.APROBADA, EstadoSesion.COMPLETADA);
+
+            notificacionService.enviarNotificacion(
+                    sesion.getEstudiante(),
+                    TipoNotificacion.CAMBIO_ESTADO,
+                    "Tu sesión del " + sesion.getFecha() + " finalizó. Ya puedes evaluarla."
+            );
+        }
+
+        return vencidas.size();
     }
 
     public List<SesionResponse> obtenerPorEstudiante(Long estudianteId) {
@@ -145,6 +202,11 @@ public class SesionService {
     }
 
     public SesionResponse toResponse(Sesion s) {
+        // MNT-12 — indica si el estudiante dueño ya evaluó la sesión, para que el
+        // front muestre el botón "Evaluar sesión" solo cuando aún no se ha calificado.
+        boolean calificada = calificacionSesionRepository
+                .existsBySesionIdAndEstudianteId(s.getId(), s.getEstudiante().getId());
+
         return new SesionResponse(
                 s.getId(),
                 s.getTutor().getId(),
@@ -155,7 +217,8 @@ public class SesionService {
                 s.getHoraInicio(),
                 s.getHoraFin(),
                 s.getEstado(),
-                s.getCreatedAt()
+                s.getCreatedAt(),
+                calificada
         );
     }
     @Transactional

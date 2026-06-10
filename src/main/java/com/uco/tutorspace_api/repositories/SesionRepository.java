@@ -1,10 +1,6 @@
 package com.uco.tutorspace_api.repositories;
 
 import com.uco.tutorspace_api.domain.Sesion;
-import com.uco.tutorspace_api.domain.Tutor;
-import com.uco.tutorspace_api.domain.enums.EstadoSesion;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -42,18 +38,6 @@ public interface SesionRepository extends JpaRepository<Sesion, Long> {
             @Param("fechaInicio") LocalDate fechaInicio,
             @Param("fechaFin") LocalDate fechaFin
     );
-    @Query("""
-    SELECT s FROM Sesion s
-    WHERE s.tutor.id = :tutorId
-      AND (:estado IS NULL OR s.estado = :estado)
-      AND (:fechaInicio IS NULL OR s.fecha >= :fechaInicio)
-      AND (:fechaFin IS NULL OR s.fecha <= :fechaFin)
-    """)
-    Page<Sesion> findByTutorIdWithFilters(
-            @Param("tutorId") Long tutorId,
-            @Param("estado") EstadoSesion estado,
-            @Param("fechaInicio") LocalDate fechaInicio,
-            @Param("fechaFin") LocalDate fechaFin,
-            Pageable pageable
-    );
+
+    Iterable<? extends Object[]> countSesionesPorTutorYEstado(List<Long> tutorIds, LocalDate inicio, LocalDate fin);
 }

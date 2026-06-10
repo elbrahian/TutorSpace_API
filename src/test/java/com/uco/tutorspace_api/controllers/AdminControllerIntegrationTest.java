@@ -146,7 +146,7 @@ class AdminControllerIntegrationTest {
                 "nombre": "Nuevo Tutor",
                 "email": "nuevo.tutor@uco.net.co",
                 "password": "password123",
-                "jornadaGeneral": "MAÑANA"
+                "jornadaGeneral": "MANANA"
             }
             """;
 
@@ -198,5 +198,35 @@ class AdminControllerIntegrationTest {
         mockMvc.perform(patch("/admin/tutores/" + tutorId + "/desactivar")
                         .header("Authorization", adminToken))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("reporteUso sin fechas debe retornar 200 con las métricas de los 3 roles (MNT-11)")
+    void reporteUso_withAdminToken_sinFechas_shouldReturn200() throws Exception {
+        mockMvc.perform(get("/admin/reportes/uso")
+                        .header("Authorization", adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.metricasPorRol").isArray())
+                .andExpect(jsonPath("$.metricasPorRol.length()").value(3))
+                .andExpect(jsonPath("$.actividadSemanal").isArray());
+    }
+
+    @Test
+    @DisplayName("reporteUso con rango de fechas debe retornar 200 (MNT-11)")
+    void reporteUso_withAdminToken_conFechas_shouldReturn200() throws Exception {
+        mockMvc.perform(get("/admin/reportes/uso")
+                        .header("Authorization", adminToken)
+                        .param("fechaInicio", "2026-01-01")
+                        .param("fechaFin", "2026-12-31"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.metricasPorRol.length()").value(3));
+    }
+
+    @Test
+    @DisplayName("reporteUso con token TUTOR debe retornar 403 (MNT-11)")
+    void reporteUso_withTutorToken_shouldReturn403() throws Exception {
+        mockMvc.perform(get("/admin/reportes/uso")
+                        .header("Authorization", tutorToken))
+                .andExpect(status().isForbidden());
     }
 }

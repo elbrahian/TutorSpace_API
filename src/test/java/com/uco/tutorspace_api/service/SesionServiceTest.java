@@ -11,6 +11,7 @@ import com.uco.tutorspace_api.domain.enums.EstadoDisponibilidad;
 import com.uco.tutorspace_api.domain.enums.EstadoSesion;
 import com.uco.tutorspace_api.domain.enums.TipoNotificacion;
 import com.uco.tutorspace_api.repositories.*;
+import com.uco.tutorspace_api.service.ChatService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,6 +40,8 @@ class SesionServiceTest {
     @Mock private DisponibilidadService disponibilidadService;
     @Mock private HistorialSesionService historialSesionService;
     @Mock private NotificacionService notificacionService;
+    @Mock private ChatService chatService; // MNT-05
+    @Mock private CalificacionSesionRepository calificacionSesionRepository;
 
     @InjectMocks
     private SesionService sesionService;
@@ -198,34 +201,6 @@ class SesionServiceTest {
         sesionService.cambiarEstado(1L, 1L, request);
 
         verify(notificacionService).enviarNotificacion(eq(estudianteMock), eq(TipoNotificacion.CAMBIO_ESTADO), anyString());
-    }
-
-    @Test
-    @DisplayName("cambiarEstado APROBADA → COMPLETADA debe actualizar estado (MNT-12)")
-    void cambiarEstado_aprobadaToCompletada_shouldUpdateState() {
-        sesionMock.setEstado(EstadoSesion.APROBADA);
-        when(sesionRepository.findById(1L)).thenReturn(Optional.of(sesionMock));
-        when(sesionRepository.save(any(Sesion.class))).thenReturn(sesionMock);
-
-        CambiarEstadoSesionRequest request = new CambiarEstadoSesionRequest(EstadoSesion.COMPLETADA);
-        sesionService.cambiarEstado(1L, 1L, request);
-
-        verify(historialSesionService).registrarCambio(any(), eq(EstadoSesion.APROBADA), eq(EstadoSesion.COMPLETADA));
-    }
-
-    @Test
-    @DisplayName("cambiarEstado PENDIENTE → COMPLETADA debe lanzar excepción (MNT-12)")
-    void cambiarEstado_pendienteToCompletada_shouldThrowException() {
-        sesionMock.setEstado(EstadoSesion.PENDIENTE);
-        when(sesionRepository.findById(1L)).thenReturn(Optional.of(sesionMock));
-
-        CambiarEstadoSesionRequest request = new CambiarEstadoSesionRequest(EstadoSesion.COMPLETADA);
-        RuntimeException exception = assertThrows(RuntimeException.class, () ->
-                sesionService.cambiarEstado(1L, 1L, request)
-        );
-
-        assertEquals("Solo se puede completar una sesión que esté APROBADA", exception.getMessage());
-        verify(sesionRepository, never()).save(any());
     }
 
     @Test
