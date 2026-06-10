@@ -110,7 +110,13 @@ public class SesionController {
             Authentication authentication) {
 
         Long userId = getUserId(authentication);
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sort));
+
+        String[] sortParts = sort.split(",");
+        String sortField = sortParts[0].trim();
+        Sort.Direction direction = (sortParts.length > 1 && sortParts[1].trim().equalsIgnoreCase("desc"))
+                ? Sort.Direction.DESC : Sort.Direction.ASC;
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
         Page<SesionResponse> sesiones = sesionService.getSesionesByTutorWithFilters(
                 userId, estado, fechaInicio, fechaFin, pageable
         );

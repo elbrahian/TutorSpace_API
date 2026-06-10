@@ -95,7 +95,7 @@ public interface SesionRepository extends JpaRepository<Sesion, Long> {
     @Query("""
     SELECT s FROM Sesion s
     WHERE s.tutor.id = :tutorId
-      AND (:estado IS NULL OR s.estado = :estado)
+      AND (CAST(:estado AS string) IS NULL OR s.estado = :estado)
       AND (:fechaInicio IS NULL OR s.fecha >= :fechaInicio)
       AND (:fechaFin IS NULL OR s.fecha <= :fechaFin)
     """)
