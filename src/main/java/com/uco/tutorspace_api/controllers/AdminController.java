@@ -4,14 +4,17 @@ import com.uco.tutorspace_api.domain.dto.*;
 import com.uco.tutorspace_api.domain.enums.EstadoSesion;
 import com.uco.tutorspace_api.service.AuditoriaService;
 import com.uco.tutorspace_api.service.MateriaService;
+import com.uco.tutorspace_api.service.ReporteCalificacionTutorService;
 import com.uco.tutorspace_api.service.ReporteDemandaService;
 import com.uco.tutorspace_api.service.ReporteDesempenoTutorService;
+import com.uco.tutorspace_api.service.ReporteUsoService;
 import com.uco.tutorspace_api.service.TutorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -38,6 +41,8 @@ public class AdminController {
     // Se inyecta el service de auditoria
     private final AuditoriaService auditoriaService;
     private final ReporteDemandaService reporteDemandaService;
+    private final ReporteUsoService reporteUsoService;
+    private final ReporteCalificacionTutorService reporteCalificacionTutorService;
 
     @GetMapping("/auditoria/sesiones")
     public ResponseEntity<Page<AuditoriaSesionResponse>> auditoria(
@@ -103,6 +108,24 @@ public class AdminController {
         return ResponseEntity.ok(reporteDemandaService.getReporte(fechaInicio, fechaFin));
     }
 
+    @Operation(summary = "Reporte de uso por rol",
+            description = "Métricas de uso de la plataforma (usuarios activos, sesiones y mensajes) diferenciadas por rol, con actividad semanal")
+    @GetMapping("/reportes/uso")
+    public ResponseEntity<ReporteUsoResponse> reporteUso(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
+        return ResponseEntity.ok(reporteUsoService.obtenerReporte(fechaInicio, fechaFin));
+    }
+
+    @Operation(summary = "Reporte de calificación de tutores",
+            description = "Ranking de tutores por calificación promedio, distribución de estrellas y comentarios de estudiantes")
+    @GetMapping("/reportes/calificaciones")
+    public ResponseEntity<List<ReporteCalificacionTutorResponse>> reporteCalificaciones(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
+        return ResponseEntity.ok(reporteCalificacionTutorService.obtenerReporte(fechaInicio, fechaFin));
+    }
+
     @Operation(summary = "Exportar reporte de demanda a CSV",
             description = "Descarga el reporte de oferta y demanda como archivo CSV")
     @GetMapping("/reportes/demanda/exportar")
@@ -154,7 +177,12 @@ public class AdminController {
         return ResponseEntity.ok(tutorService.retirarMateria(tutorId, materiaId));
     }
 
-    public record ActualizarJornadaRequest(@NotBlank String jornadaGeneral) {}
+    public record ActualizarJornadaRequest(
+            @NotBlank(message = "La jornada es requerida")
+            @Pattern(regexp = "^(MANANA|TARDE|NOCHE)$",
+                    message = "La jornada debe ser MANANA, TARDE o NOCHE")
+            String jornadaGeneral
+    ) {}
 
     @Operation(summary = "Actualizar jornada", description = "Actualiza la jornada laboral de un tutor")
     @PatchMapping("/tutores/{id}/jornada")
